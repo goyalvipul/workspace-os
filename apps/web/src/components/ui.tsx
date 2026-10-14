@@ -3,7 +3,7 @@ import * as Dropdown from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
 import { Check, X } from 'lucide-react';
-import { forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from 'react';
 import { dismissToast, useStore } from '../lib/store';
 
 export { clsx };
@@ -92,21 +92,28 @@ export function Segmented<T extends string>({ value, onChange, options, label }:
   );
 }
 
-export function Chip({ children, active, onClick, color, className, title }: { children: ReactNode; active?: boolean; onClick?: () => void; color?: string; className?: string; title?: string }) {
-  const cls = clsx('inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-sm', active ? 'border-accent-text text-accent-text' : 'border-line text-fg', onClick && 'hover:bg-surface2', className);
+type ChipProps = { children: ReactNode; active?: boolean; color?: string } & Omit<HTMLAttributes<HTMLElement>, 'color'>;
+
+/**
+ * Pill. Becomes a real <button> when it is interactive. It forwards its ref and any extra props, which is
+ * required for Radix `asChild` triggers (Popover/Dropdown inject onClick, aria-* and a ref into the child).
+ */
+export const Chip = forwardRef<HTMLElement, ChipProps>(function Chip({ children, active, color, className, onClick, ...rest }, ref) {
+  const interactive = !!onClick;
+  const cls = clsx('inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-sm', active ? 'border-accent-text text-accent-text' : 'border-line text-fg', interactive && 'cursor-pointer hover:bg-surface2', className);
   const dot = color ? <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} aria-hidden /> : null;
-  return onClick ? (
-    <button type="button" onClick={onClick} className={cls} title={title}>
+  return interactive ? (
+    <button ref={ref as Ref<HTMLButtonElement>} type="button" onClick={onClick} className={cls} {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}>
       {dot}
       {children}
     </button>
   ) : (
-    <span className={cls} title={title}>
+    <span ref={ref as Ref<HTMLSpanElement>} className={cls} {...rest}>
       {dot}
       {children}
     </span>
   );
-}
+});
 
 // ---------------------------------------------------------------- overlays
 export function Sheet({ open, onOpenChange, title, children, side, wide }: { open: boolean; onOpenChange: (o: boolean) => void; title: string; children: ReactNode; side?: boolean; wide?: boolean }) {
@@ -198,7 +205,7 @@ export const PopoverTrigger = Popover.Trigger;
 export function PopoverContent({ children, className, align = 'start' }: { children: ReactNode; className?: string; align?: 'start' | 'end' | 'center' }) {
   return (
     <Popover.Portal>
-      <Popover.Content align={align} sideOffset={6} collisionPadding={8} className={clsx('anim-fade z-[70] max-h-[70dvh] overflow-auto rounded-xl border border-line bg-surface p-2 shadow-2xl', className)}>
+      <Popover.Content align={align} sideOffset={6} collisionPadding={8} className={clsx('anim-fade z-[70] max-h-[min(70dvh,var(--radix-popover-content-available-height))] overflow-auto rounded-xl border border-line bg-surface p-2 shadow-2xl', className)}>
         {children}
       </Popover.Content>
     </Popover.Portal>

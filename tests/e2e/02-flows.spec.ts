@@ -42,6 +42,55 @@ test('main pages render without accessibility violations', async ({ page }) => {
   expect(found).toEqual([]);
 });
 
+test('quick add pickers: date, repeat, labels, reminder and project all open and apply', async ({ page }, info) => {
+  const proj = `Pick ${info.project.name}`;
+  const title = `Pickers ${info.project.name}`;
+  const label = `errand-${info.project.name}`;
+  await page.goto('/browse');
+  await page.getByRole('button', { name: 'Add project' }).click();
+  await page.getByLabel('Project name').fill(proj);
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('heading', { name: proj })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /^Add task/ }).first().click();
+  const dlg = page.getByRole('dialog');
+  await dlg.getByLabel('Task name').fill(title);
+
+  await dlg.getByRole('button', { name: /Change project/ }).click();
+  await page.getByRole('button', { name: proj, exact: true }).click();
+  await expect(dlg.getByRole('button', { name: new RegExp(`Project: ${proj}`) })).toBeVisible();
+
+  await dlg.getByRole('button', { name: 'Date' }).click();
+  await page.getByRole('button', { name: /^Tomorrow/ }).click();
+  await page.keyboard.press('Escape');
+
+  await dlg.getByRole('button', { name: 'Labels' }).click();
+  await page.getByLabel('Search or create label').fill(label);
+  await page.getByRole('button', { name: new RegExp(`Create "${label}"`) }).click();
+  await page.keyboard.press('Escape');
+  await expect(dlg.getByRole('button', { name: new RegExp(label) })).toBeVisible();
+
+  await dlg.getByRole('button', { name: 'Repeat' }).click();
+  await page.getByRole('button', { name: 'Every week', exact: true }).click();
+  await expect(dlg.getByRole('button', { name: /Every week/ })).toBeVisible();
+
+  await dlg.getByRole('button', { name: 'Reminders' }).click();
+  await page.getByLabel('Add a reminder').selectOption({ label: '10 minutes before' });
+  await page.keyboard.press('Escape');
+  await expect(dlg.getByRole('button', { name: /1 reminder/ })).toBeVisible();
+
+  await dlg.getByRole('button', { name: /Add task/ }).click();
+  await expect(dlg).toBeHidden();
+
+  await page.goto('/upcoming');
+  await page.getByRole('button', { name: `Open ${title}` }).click();
+  const sheet = page.getByRole('dialog');
+  await expect(sheet.getByText(/Every week/).first()).toBeVisible();
+  await expect(sheet.getByText(label).first()).toBeVisible();
+  await expect(sheet.getByText(/10 minutes before/).first()).toBeVisible();
+});
+
 test('offline: changes queue locally and sync when the connection returns', async ({ page, context }, info) => {
   const title = `Offline task ${info.project.name}`;
   await page.goto('/today');

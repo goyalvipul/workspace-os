@@ -202,7 +202,7 @@ export function ProjectPicker({ projectId, sectionId, onChange, withSections = t
   return (
     <PopoverRoot open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Chip active={!!cur}>
+        <Chip active={!!cur} aria-label={`Project: ${cur ? cur.name : 'Inbox'}${sec ? ` / ${sec.name}` : ''}. Change project`}>
           {cur ? <Hash size={14} style={{ color: cur.color }} aria-hidden /> : <Inbox size={14} aria-hidden />}
           {cur ? cur.name : 'Inbox'}
           {sec ? ` / ${sec.name}` : ''}
@@ -287,7 +287,10 @@ export function RecurrencePicker({ value, onChange, disabledReason }: { value: R
   const [custom, setCustom] = useState('');
   const [days, setDays] = useState<number[]>([]);
   const mode = value?.mode ?? 'fixed';
+  const [every, setEvery] = useState(1);
+  const [unit, setUnit] = useState<'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'>('WEEKLY');
   const customOk = custom.trim() ? validateRule(custom) : null;
+  const builtRule = unit === 'WEEKLY' && days.length ? `${weeklyRule(days)}${every > 1 ? `;INTERVAL=${every}` : ''}` : `FREQ=${unit}${every > 1 ? `;INTERVAL=${every}` : ''}`;
   return (
     <PopoverRoot open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -299,34 +302,53 @@ export function RecurrencePicker({ value, onChange, disabledReason }: { value: R
       <PopoverContent className="w-[300px]">
         {disabledReason && <p className="mb-2 rounded-lg bg-surface2 p-2 text-xs text-muted">{disabledReason}</p>}
         {RULE_PRESETS.map((p) => (
-          <button key={p.rule} type="button" className="flex min-h-10 w-full items-center gap-3 rounded-lg px-2 text-sm hover:bg-surface2" onClick={() => onChange({ rule: p.rule, mode })}>
+          <button key={p.rule} type="button" className="flex min-h-10 w-full items-center gap-3 rounded-lg px-2 text-sm hover:bg-surface2" onClick={() => {
+              onChange({ rule: p.rule, mode });
+              setOpen(false);
+            }}>
             <span className="flex-1 text-left">{p.label}</span>
             {value?.rule === p.rule && <Check size={16} />}
           </button>
         ))}
         <div className="mt-1 border-t border-line pt-2">
-          <p className="mb-1 text-xs font-medium text-muted">On these weekdays</p>
-          <div className="flex gap-1">
-            {WD.map((d, i) => (
-              <button key={i} type="button" aria-pressed={days.includes(i)} aria-label={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i]} onClick={() => setDays(days.includes(i) ? days.filter((x) => x !== i) : [...days, i])} className={clsx('h-8 w-8 rounded-full text-xs', days.includes(i) ? 'bg-accent text-accent-fg' : 'bg-surface2')}>
-                {d}
-              </button>
-            ))}
+          <p className="mb-1 text-xs font-medium text-muted">Custom: repeat every</p>
+          <div className="flex items-center gap-2">
+            <Input aria-label="Repeat every (number)" type="number" min={1} max={99} value={every} onChange={(e) => setEvery(Math.max(1, Math.min(99, Number(e.target.value) || 1)))} className="w-20" />
+            <Select aria-label="Repeat unit" value={unit} onChange={(e) => setUnit(e.target.value as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY')} className="flex-1">
+              <option value="DAILY">{every === 1 ? 'day' : 'days'}</option>
+              <option value="WEEKLY">{every === 1 ? 'week' : 'weeks'}</option>
+              <option value="MONTHLY">{every === 1 ? 'month' : 'months'}</option>
+              <option value="YEARLY">{every === 1 ? 'year' : 'years'}</option>
+            </Select>
           </div>
-          <Button size="sm" className="mt-2" disabled={!days.length} onClick={() => onChange({ rule: weeklyRule(days), mode })}>
-            Use selected weekdays
+          {unit === 'WEEKLY' && (
+            <>
+              <p className="mb-1 mt-2 text-xs font-medium text-muted">On these weekdays (optional)</p>
+              <div className="flex gap-1">
+                {WD.map((d, i) => (
+                  <button key={i} type="button" aria-pressed={days.includes(i)} aria-label={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i]} onClick={() => setDays(days.includes(i) ? days.filter((x) => x !== i) : [...days, i])} className={clsx('h-8 w-8 rounded-full text-xs', days.includes(i) ? 'bg-accent text-accent-fg' : 'bg-surface2')}>
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          <p className="mt-2 text-xs text-muted">{describeRule(builtRule)}</p>
+          <Button size="sm" className="mt-2" onClick={() => onChange({ rule: builtRule, mode })}>
+            Use this repeat
           </Button>
         </div>
-        <div className="mt-2 border-t border-line pt-2">
-          <label htmlFor="rrule" className="mb-1 block text-xs font-medium text-muted">
-            Custom rule (RRULE, e.g. FREQ=MONTHLY;BYMONTHDAY=15)
+        <details className="mt-2 border-t border-line pt-2">
+          <summary className="cursor-pointer text-xs font-medium text-muted">Advanced: custom rule (RRULE)</summary>
+          <label htmlFor="rrule" className="mb-1 mt-2 block text-xs text-muted">
+            e.g. FREQ=MONTHLY;BYMONTHDAY=15
           </label>
           <Input id="rrule" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="FREQ=WEEKLY;INTERVAL=3" />
           {customOk && !customOk.ok && <p className="mt-1 text-xs text-danger">{customOk.error}</p>}
           <Button size="sm" className="mt-2" disabled={!customOk || !customOk.ok} onClick={() => onChange({ rule: custom.trim(), mode })}>
             Use custom rule
           </Button>
-        </div>
+        </details>
         {value && (
           <div className="mt-2 flex items-center justify-between gap-3 border-t border-line pt-2 text-sm">
             <span id="after-completion">Repeat after completion</span>
@@ -350,6 +372,30 @@ const REL_PRESETS = [
   { label: '1 hour before', offset: 60 },
   { label: '1 day before', offset: 1440 },
 ];
+
+/** Chip + popover wrapper around ReminderEditor, for compact forms such as Quick Add. */
+export function ReminderPicker({ value, onChange, hasTime }: { value: ReminderInput[]; onChange: (r: ReminderInput[]) => void; hasTime: boolean }) {
+  return (
+    <PopoverRoot>
+      <PopoverTrigger asChild>
+        <Chip active={value.length > 0}>
+          <Bell size={14} aria-hidden />
+          {value.length ? `${value.length} reminder${value.length > 1 ? 's' : ''}` : 'Reminders'}
+        </Chip>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px]">
+        <ReminderEditor value={value} onChange={onChange} hasTime={hasTime} />
+        <div className="mt-2 flex justify-end">
+          <PopoverClose asChild>
+            <Button size="sm" variant="primary">
+              Done
+            </Button>
+          </PopoverClose>
+        </div>
+      </PopoverContent>
+    </PopoverRoot>
+  );
+}
 
 export function ReminderEditor({ value, onChange, hasTime }: { value: ReminderInput[]; onChange: (r: ReminderInput[]) => void; hasTime: boolean }) {
   const [abs, setAbs] = useState('');

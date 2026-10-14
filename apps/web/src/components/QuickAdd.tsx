@@ -1,9 +1,9 @@
 import { Plus, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { buildDue, describeRule, formatDateLabel, formatTime, parseQuickAdd, stripTokens, type QuickAddToken } from '@wos/shared';
+import { buildDue, describeRule, formatDateLabel, formatTime, parseQuickAdd, stripTokens, type QuickAddToken, type ReminderInput } from '@wos/shared';
 import { actions, toast, useStore } from '../lib/store';
 import { useHour12, useToday, useTz } from '../lib/hooks';
-import { DatePicker, LabelPicker, PriorityPicker, ProjectPicker, RecurrencePicker, type DateValue, type RecurrenceValue } from './pickers';
+import { DatePicker, LabelPicker, PriorityPicker, ProjectPicker, RecurrencePicker, ReminderPicker, type DateValue, type RecurrenceValue } from './pickers';
 import { Button, IconButton, Input, Sheet, Textarea, clsx } from './ui';
 
 const KIND_STYLE: Record<QuickAddToken['kind'], string> = {
@@ -43,6 +43,7 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
   const [manualLabels, setManualLabels] = useState<string[] | null>(null);
   const [manualRec, setManualRec] = useState<{ v: RecurrenceValue | null } | null>(null);
   const [showDesc, setShowDesc] = useState(false);
+  const [reminders, setReminders] = useState<ReminderInput[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     inputRef.current?.focus();
@@ -63,12 +64,15 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
   const manualLabelIds = manualLabels ?? [];
 
   const title = (stripTokens(text, tokens).trim() || text.trim()).slice(0, 500);
+  // A repeat or a relative reminder needs a date to anchor to; fall back to today instead of silently dropping it.
+  const needsDate = !!recurrence || reminders.some((r) => r.kind === 'relative');
+  const effectiveDate = date.date ?? (needsDate ? today : null);
 
   const submit = (stay: boolean) => {
     if (!title) return;
     const ids = new Set(manualLabelIds);
     for (const n of labelNames) ids.add(actions.createLabel(n).id);
-    const due = date.date ? buildDue({ date: date.date, time: date.time, timezone: tz }) : null;
+    const due = effectiveDate ? buildDue({ date: effectiveDate, time: date.date ? date.time : null, timezone: tz }) : null;
     actions.createTask({
       title,
       description: desc.trim() || undefined,
@@ -80,6 +84,7 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
       dueAtUtc: due?.dueAtUtc ?? null,
       dueTimezone: due?.dueTimezone ?? null,
       recurrence: recurrence && due ? recurrence : null,
+      reminders,
     });
     const where = project.p ? (projects[project.p]?.name ?? 'project') : 'Inbox';
     toast(`Added to ${where}`, 'success');
@@ -87,6 +92,7 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
       setText('');
       setDesc('');
       setIgnored([]);
+      setReminders([]);
       setManualDate(date.date ? date : null);
       inputRef.current?.focus();
     } else actions.closeQuickAdd();
@@ -158,10 +164,11 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
         <ProjectPicker projectId={project.p} sectionId={project.s} onChange={(p, s) => setManualProject({ p, s })} />
         <LabelPicker value={[...new Set([...manualLabelIds, ...labelNames.map((n) => Object.values(labels).find((l) => l.name.toLowerCase() === n.toLowerCase())?.id).filter((x): x is string => !!x)])]} onChange={setManualLabels} />
         <RecurrencePicker value={recurrence} onChange={(v) => setManualRec({ v })} disabledReason={!date.date && recurrence ? 'A repeating task needs a date; Today is used if you leave it empty.' : undefined} />
+        <ReminderPicker value={reminders} onChange={setReminders} hasTime={!!date.time} />
       </div>
-      {(date.date || recurrence) && (
+      {(effectiveDate || recurrence) && (
         <p className="text-xs text-muted">
-          {date.date ? `Due ${formatDateLabel(date.date, today)}${date.time ? ` at ${formatTime(date.time, hour12)}` : ''}` : ''}
+          {effectiveDate ? `Due ${formatDateLabel(effectiveDate, today)}${date.date && date.time ? ` at ${formatTime(date.time, hour12)}` : ''}` : ''}
           {recurrence ? `${date.date ? ' \u00b7 ' : ''}${describeRule(recurrence.rule)}${recurrence.mode === 'after_completion' ? ' (after completion)' : ''}` : ''}
         </p>
       )}
