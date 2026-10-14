@@ -34,6 +34,38 @@ export function useMediaQuery(q: string): boolean {
 }
 export const useIsDesktop = () => useMediaQuery('(min-width: 768px)');
 
+/**
+ * On-screen keyboard tracking. iOS (Safari and installed PWAs) does not resize the layout viewport when the keyboard opens, so a
+ * `fixed bottom-0` sheet ends up hidden behind it. The visual viewport does shrink, so we measure how much of the layout viewport
+ * is covered at the bottom (`bottom`) and how tall the visible area is (`height`). Both update as the keyboard opens and closes.
+ */
+export function useKeyboardInset(active: boolean): { bottom: number; height: number | null } {
+  const [state, setState] = useState<{ bottom: number; height: number | null }>({ bottom: 0, height: null });
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!active || !vv) {
+      setState({ bottom: 0, height: null });
+      return;
+    }
+    const update = () => {
+      const bottom = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+      // Ignore small differences (browser toolbars); a keyboard is well over 100 px.
+      setState((prev) => {
+        const next = { bottom: bottom > 100 ? bottom : 0, height: bottom > 100 ? Math.round(vv.height) : null };
+        return prev.bottom === next.bottom && prev.height === next.height ? prev : next;
+      });
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, [active]);
+  return state;
+}
+
 export function useDebounced<T>(value: T, ms = 250): T {
   const [v, setV] = useState(value);
   useEffect(() => {

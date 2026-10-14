@@ -190,3 +190,22 @@ test('sidebar: the + next to Projects adds a project and opens it', async ({ pag
   await expect(page.getByRole('heading', { name })).toBeVisible();
   await expect(page.getByRole('link', { name })).toBeVisible();
 });
+
+test('quick add sheet rides above the on-screen keyboard and drops back when it closes', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'phones only');
+  await page.goto('/inbox');
+  await page.getByRole('button', { name: /^Add task/ }).first().click();
+  const dlg = page.getByRole('dialog');
+  await expect(dlg).toBeVisible();
+  const setKeyboard = (px: number) => page.evaluate((k) => {
+    const vv = window.visualViewport as VisualViewport;
+    Object.defineProperty(vv, 'height', { configurable: true, value: window.innerHeight - k });
+    vv.dispatchEvent(new Event('resize'));
+  }, px);
+  const bottomGap = async () => (await page.evaluate(() => window.innerHeight)) - ((await dlg.boundingBox())!.y + (await dlg.boundingBox())!.height);
+  expect(await bottomGap()).toBeLessThan(2);
+  await setKeyboard(300);
+  await expect.poll(bottomGap).toBeGreaterThan(290);
+  await setKeyboard(0);
+  await expect.poll(bottomGap).toBeLessThan(2);
+});

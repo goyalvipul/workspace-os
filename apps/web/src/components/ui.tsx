@@ -4,6 +4,7 @@ import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
 import { Check, X } from 'lucide-react';
 import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from 'react';
+import { useIsDesktop, useKeyboardInset } from '../lib/hooks';
 import { dismissToast, useStore } from '../lib/store';
 
 export { clsx };
@@ -117,12 +118,16 @@ export const Chip = forwardRef<HTMLElement, ChipProps>(function Chip({ children,
 
 // ---------------------------------------------------------------- overlays
 export function Sheet({ open, onOpenChange, title, children, side, wide }: { open: boolean; onOpenChange: (o: boolean) => void; title: string; children: ReactNode; side?: boolean; wide?: boolean }) {
+  // On phones the bottom sheet must sit above the on-screen keyboard and follow it as it opens and closes.
+  const desktop = useIsDesktop();
+  const kb = useKeyboardInset(open && !desktop);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="anim-fade fixed inset-0 z-40 bg-[var(--overlay)]" />
         <Dialog.Content
           aria-describedby={undefined}
+          style={!desktop && kb.height ? { bottom: kb.bottom, maxHeight: kb.height - 12 } : undefined}
           className={clsx(
             'anim-sheet fixed z-50 flex max-h-[92dvh] flex-col overflow-hidden border border-line bg-bg shadow-2xl outline-none',
             'inset-x-0 bottom-0 rounded-t-2xl',

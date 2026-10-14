@@ -106,7 +106,7 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
         e.preventDefault();
         submit(false);
       }}
-      className="flex flex-col gap-3 p-4"
+      className="flex min-h-0 flex-col gap-3 overflow-y-auto p-4"
     >
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Quick add</h2>
