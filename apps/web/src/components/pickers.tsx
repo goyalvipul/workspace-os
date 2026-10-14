@@ -313,13 +313,17 @@ export function RecurrencePicker({ value, onChange, disabledReason }: { value: R
         <div className="mt-1 border-t border-line pt-2">
           <p className="mb-1 text-xs font-medium text-muted">Custom: repeat every</p>
           <div className="flex items-center gap-2">
-            <Input aria-label="Repeat every (number)" type="number" min={1} max={99} value={every} onChange={(e) => setEvery(Math.max(1, Math.min(99, Number(e.target.value) || 1)))} className="w-20" />
-            <Select aria-label="Repeat unit" value={unit} onChange={(e) => setUnit(e.target.value as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY')} className="flex-1">
+            <div className="w-20 shrink-0">
+              <Input aria-label="Repeat every (number)" type="number" min={1} max={99} value={every} onChange={(e) => setEvery(Math.max(1, Math.min(99, Number(e.target.value) || 1)))} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Select aria-label="Repeat unit" value={unit} onChange={(e) => setUnit(e.target.value as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY')}>
               <option value="DAILY">{every === 1 ? 'day' : 'days'}</option>
               <option value="WEEKLY">{every === 1 ? 'week' : 'weeks'}</option>
               <option value="MONTHLY">{every === 1 ? 'month' : 'months'}</option>
               <option value="YEARLY">{every === 1 ? 'year' : 'years'}</option>
-            </Select>
+              </Select>
+            </div>
           </div>
           {unit === 'WEEKLY' && (
             <>
@@ -334,8 +338,14 @@ export function RecurrencePicker({ value, onChange, disabledReason }: { value: R
             </>
           )}
           <p className="mt-2 text-xs text-muted">{describeRule(builtRule)}</p>
-          <Button size="sm" className="mt-2" onClick={() => onChange({ rule: builtRule, mode })}>
-            Use this repeat
+          <Button
+            size="sm"
+            className="mt-2"
+            onClick={() => {
+              onChange({ rule: builtRule, mode });
+              setOpen(false);
+            }}>
+            Apply custom repeat
           </Button>
         </div>
         <details className="mt-2 border-t border-line pt-2">

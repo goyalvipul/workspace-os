@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Activity, CalendarDays, ChevronRight, Filter, Hash, Inbox, LayoutTemplate, Pencil, Plus, Search as SearchIcon, Settings, Star, Tag, Trash2 } from 'lucide-react';
+import { Activity, ArrowUpToLine, CalendarDays, ChevronRight, Filter, Hash, Inbox, LayoutTemplate, Pencil, Plus, Search as SearchIcon, Settings, Star, Tag, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { COLORS, compareTasks, descendantsOf, evalFilter, type FilterNode, type SavedFilterDTO, type TaskDTO, type TemplateBody, type TemplateDTO } from '@wos/shared';
@@ -88,14 +88,19 @@ export function BrowsePage() {
         </form>
       )}
       <ul className="space-y-0.5">
-        {flattenTree(tree).map((n) => (
-          <li key={n.project.id}>
-            <Link to={`/project/${n.project.id}`} className={row} style={{ paddingLeft: 12 + n.depth * 18 }}>
+        {flattenTree(tree).map((n, i) => (
+          <li key={n.project.id} className="flex items-center">
+            <Link to={`/project/${n.project.id}`} className={clsx(row, 'min-w-0 flex-1')} style={{ paddingLeft: 12 + n.depth * 18 }}>
               <Hash size={18} style={{ color: n.project.color }} aria-hidden /> <span className="truncate">{n.project.name}</span>
               {n.project.favorite && <Star size={12} className="text-warn" fill="currentColor" aria-label="Favorite" />}
               <span className="ml-auto text-sm text-muted">{counts.get(n.project.id) || ''}</span>
               <ChevronRight size={16} className="text-muted" aria-hidden />
             </Link>
+            {i > 0 && (
+              <IconButton label={`Move ${n.project.name} to top`} onClick={() => actions.moveProjectToTop(n.project.id)}>
+                <ArrowUpToLine size={18} />
+              </IconButton>
+            )}
           </li>
         ))}
       </ul>

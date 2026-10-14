@@ -768,6 +768,13 @@ export const actions = {
     }));
     enqueue({ kind: 'section.patch', method: 'PATCH', url: `/sections/${id}`, body: { ...patch }, needsVersion: true, entity: { type: 'section', id } });
   },
+  /** Moves a project to the top of the sidebar list (first among its siblings). */
+  moveProjectToTop(id: string): void {
+    const all = Object.values(get().projects).sort((a, b) => a.sortOrder - b.sortOrder);
+    const ids = [id, ...all.filter((p) => p.id !== id).map((p) => p.id)];
+    set((s) => ({ projects: Object.fromEntries(Object.entries(s.projects).map(([k, p]) => [k, { ...p, sortOrder: ids.indexOf(k) + 1 }])) }));
+    enqueue({ kind: 'project.reorder', method: 'POST', url: '/projects/reorder', body: { ids }, entity: { type: 'project', id } });
+  },
   /** Reorders the board columns of a project. `ids` is the new left-to-right order of its sections. */
   reorderSections(projectId: string, ids: string[]): void {
     set((s) => ({ sections: Object.fromEntries(Object.entries(s.sections).map(([k, x]) => [k, x.projectId === projectId && ids.includes(x.id) ? { ...x, sortOrder: ids.indexOf(x.id) + 1 } : x])) }));

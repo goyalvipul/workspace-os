@@ -61,7 +61,9 @@ test('quick add pickers: date, repeat, labels, reminder and project all open and
   await page.getByRole('button', { name: proj, exact: true }).click();
   await expect(dlg.getByRole('button', { name: new RegExp(`Project: ${proj}`) })).toBeVisible();
 
-  await dlg.getByRole('button', { name: 'Date' }).click();
+  // A task in a project defaults to Today, so it appears in Today / Upcoming / Calendar.
+  await expect(dlg.getByRole('button', { name: 'Today', exact: true })).toBeVisible();
+  await dlg.getByRole('button', { name: 'Today', exact: true }).click();
   await page.getByRole('button', { name: /^Tomorrow/ }).click();
   await page.keyboard.press('Escape');
 

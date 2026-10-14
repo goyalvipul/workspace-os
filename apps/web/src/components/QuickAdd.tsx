@@ -66,7 +66,9 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
   const title = (stripTokens(text, tokens).trim() || text.trim()).slice(0, 500);
   // A repeat or a relative reminder needs a date to anchor to; fall back to today instead of silently dropping it.
   const needsDate = !!recurrence || reminders.some((r) => r.kind === 'relative');
-  const effectiveDate = date.date ?? (needsDate ? today : null);
+  // Tasks that go into a project default to Today so they show up in Today / Upcoming / Calendar; choosing "No date" in the picker opts out.
+  const explicitNoDate = manualDate !== null && !manualDate.date;
+  const effectiveDate = date.date ?? (needsDate || (project.p && !explicitNoDate) ? today : null);
 
   const submit = (stay: boolean) => {
     if (!title) return;
@@ -159,17 +161,17 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
         </button>
       )}
       <div className="flex flex-wrap gap-2">
-        <DatePicker value={date} onChange={(v) => setManualDate(v)} />
+        <DatePicker value={{ date: effectiveDate, time: effectiveDate ? date.time : null }} onChange={(v) => setManualDate(v)} />
         <PriorityPicker value={priority} onChange={setManualPriority} compact />
         <ProjectPicker projectId={project.p} sectionId={project.s} onChange={(p, s) => setManualProject({ p, s })} />
         <LabelPicker value={[...new Set([...manualLabelIds, ...labelNames.map((n) => Object.values(labels).find((l) => l.name.toLowerCase() === n.toLowerCase())?.id).filter((x): x is string => !!x)])]} onChange={setManualLabels} />
-        <RecurrencePicker value={recurrence} onChange={(v) => setManualRec({ v })} disabledReason={!date.date && recurrence ? 'A repeating task needs a date; Today is used if you leave it empty.' : undefined} />
+        <RecurrencePicker value={recurrence} onChange={(v) => setManualRec({ v })} disabledReason={explicitNoDate && recurrence ? 'A repeating task needs a date; Today is used if you leave it empty.' : undefined} />
         <ReminderPicker value={reminders} onChange={setReminders} hasTime={!!date.time} />
       </div>
       {(effectiveDate || recurrence) && (
         <p className="text-xs text-muted">
           {effectiveDate ? `Due ${formatDateLabel(effectiveDate, today)}${date.date && date.time ? ` at ${formatTime(date.time, hour12)}` : ''}` : ''}
-          {recurrence ? `${date.date ? ' \u00b7 ' : ''}${describeRule(recurrence.rule)}${recurrence.mode === 'after_completion' ? ' (after completion)' : ''}` : ''}
+          {recurrence ? `${effectiveDate ? ' \u00b7 ' : ''}${describeRule(recurrence.rule)}${recurrence.mode === 'after_completion' ? ' (after completion)' : ''}` : ''}
         </p>
       )}
       <div className="flex items-center justify-between gap-2 pt-1">

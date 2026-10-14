@@ -1,7 +1,7 @@
 import { closestCorners, DndContext, DragOverlay, KeyboardSensor, PointerSensor, TouchSensor, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Archive, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Columns3, Heart, ListIcon, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Archive, ArrowUpToLine, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Columns3, Heart, ListIcon, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { COLORS, sortByPosition, type ProjectDTO, type SectionDTO, type TaskDTO } from '@wos/shared';
@@ -71,6 +71,7 @@ export function ProjectPage() {
                 <MenuItem icon={<Pencil size={16} />} onSelect={() => setEditing(true)}>Edit project</MenuItem>
                 <MenuItem icon={<Plus size={16} />} onSelect={() => setAddingSection(true)}>Add section</MenuItem>
                 <MenuItem icon={<Heart size={16} />} onSelect={() => actions.updateProject(id, { favorite: !project.favorite })}>{project.favorite ? 'Remove from favorites' : 'Add to favorites'}</MenuItem>
+                <MenuItem icon={<ArrowUpToLine size={16} />} onSelect={() => actions.moveProjectToTop(id)}>Move to top</MenuItem>
                 <MenuItem icon={<Archive size={16} />} onSelect={() => { actions.updateProject(id, { archived: !project.archivedAt }); if (!project.archivedAt) nav('/browse'); }}>
                   {project.archivedAt ? 'Unarchive' : 'Archive'}
                 </MenuItem>
@@ -144,7 +145,7 @@ function SectionHeader({ section, count, onMove }: { section: SectionDTO; count:
   const [name, setName] = useState(section.name);
   const [confirm, setConfirm] = useState(false);
   return (
-    <div className="flex items-center justify-between border-b border-line py-1">
+    <div className="flex min-h-10 items-center justify-between border-b border-line py-1">
       {renaming ? (
         <form className="flex flex-1 gap-2" onSubmit={(e) => { e.preventDefault(); if (name.trim() && name !== section.name) actions.updateSection(section.id, { name }); setRenaming(false); }}>
           <Input autoFocus aria-label="Section name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => setRenaming(false)} />
@@ -208,8 +209,12 @@ function BoardCard({ task, onToggle }: { task: TaskDTO; onToggle: (t: TaskDTO) =
 function BoardColumn({ id, title, tasks, onAdd, onToggle, header, done }: { id: string; title: string; tasks: TaskDTO[]; onAdd?: () => void; onToggle: (t: TaskDTO) => void; header?: React.ReactNode; done?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${id}`, data: { type: 'column', sectionId: id === 'none' ? null : id } });
   return (
-    <section aria-label={title} className={clsx('flex w-[290px] shrink-0 flex-col rounded-xl bg-bg/60 p-2', isOver && 'ring-2 ring-accent-text')}>
-      {header ?? <h2 className="px-2 py-1 text-sm font-bold">{title} <span className="ml-1 text-xs font-normal text-muted">{tasks.length}</span></h2>}
+    <section aria-label={title} className={clsx('flex w-[290px] shrink-0 flex-col rounded-xl border border-line bg-surface/40 px-3 py-2', isOver && 'ring-2 ring-accent-text')}>
+      {header ?? (
+        <div className="flex min-h-10 items-center justify-between border-b border-line py-1">
+          <h2 className="text-[15px] font-bold">{title} <span className="ml-1 text-xs font-normal text-muted">{tasks.length}</span></h2>
+        </div>
+      )}
       <div ref={setNodeRef} className="flex min-h-[60px] flex-1 flex-col gap-2 py-1">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((t) => <BoardCard key={t.id} task={t} onToggle={onToggle} />)}
@@ -233,7 +238,7 @@ function AddColumn({ projectId, hasColumns }: { projectId: string; hasColumns: b
     setName('');
   };
   return (
-    <div className="flex w-[290px] shrink-0 flex-col gap-2 rounded-xl border border-dashed border-line p-2">
+    <div className="flex w-[290px] shrink-0 flex-col gap-2 self-start rounded-xl border border-dashed border-line px-3 py-2">
       {open ? (
         <form
           className="flex flex-col gap-2"
@@ -331,7 +336,7 @@ function BoardLayout({ project, data }: { project: ProjectDTO; data: Data }) {
   return (
     <div className="-mx-4 overflow-x-auto px-4 pb-4 scroll-thin">
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onStart} onDragEnd={onEnd} onDragCancel={() => setActive(null)}>
-        <div className="flex items-start gap-3">
+        <div className="flex items-stretch gap-3">
           {columns.map((c, ci) => (
             <BoardColumn
               key={c.id}
