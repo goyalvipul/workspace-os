@@ -169,7 +169,7 @@ Workspace OS is a PWA, so installing it is just a browser action. **It must be o
 2. Tap **Share** and then **Add to Home Screen**.
 3. Make sure **"Open as Web App" is switched ON**, then tap **Add**. If that switch is off, the icon just opens a normal Safari tab with the address bar.
 4. Open it from the new home-screen icon. It should be full-screen with no browser bars. You have to sign in once more inside it, because an installed app does not share Safari's login.
-5. For notifications, open **Settings** in the app and enable reminders (iOS only delivers web push to apps installed this way, iOS 16.4 or newer).
+5. For notifications, open **Settings → Notifications** in the app and turn on push (iOS only delivers web push to apps installed this way, iOS 16.4 or newer).
 
 If it still opens with browser bars: delete the icon and add it again from Safari, check the toggle in step 3, and make sure the address is the same HTTPS address you sign in with.
 
