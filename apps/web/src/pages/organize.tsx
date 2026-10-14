@@ -112,8 +112,10 @@ export function BrowsePage() {
 
 // ---------------------------------------------------------------- Labels + saved filters
 export function LabelsPage() {
-  const labels = useStore((s) => Object.values(s.labels).sort((a, b) => a.name.localeCompare(b.name)));
-  const filters = useStore((s) => Object.values(s.filters));
+  const labelMap = useStore((s) => s.labels);
+  const labels = useMemo(() => Object.values(labelMap).sort((a, b) => a.name.localeCompare(b.name)), [labelMap]);
+  const filterMap = useStore((s) => s.filters);
+  const filters = useMemo(() => Object.values(filterMap), [filterMap]);
   const all = useAllTasks();
   const [name, setName] = useState('');
   const [color, setColor] = useState(COLORS[5] as string);
@@ -237,7 +239,7 @@ function FilterEditor({ filter, onClose }: { filter: SavedFilterDTO | null; onCl
   const [match, setMatch] = useState<'and' | 'or'>(initial?.match ?? 'and');
   const [rows, setRows] = useState<Row[]>(initial?.rows ?? []);
   const [busy, setBusy] = useState(false);
-  const ast: FilterNode | null = rows.length ? (rows.length === 1 ? rowToNode(rows[0] as Row) : { op: match, children: rows.map(rowToNode) }) : null;
+  const ast = useMemo<FilterNode | null>(() => (rows.length ? (rows.length === 1 ? rowToNode(rows[0] as Row) : { op: match, children: rows.map(rowToNode) }) : null), [rows, match]);
   const today = useToday();
   const all = useAllTasks();
   const preview = useMemo(() => {
@@ -325,7 +327,8 @@ export function FilterTasksPage() {
 
 // ---------------------------------------------------------------- Templates
 export function TemplatesPage() {
-  const templates = useStore((s) => Object.values(s.templates));
+  const templateMap = useStore((s) => s.templates);
+  const templates = useMemo(() => Object.values(templateMap), [templateMap]);
   const [tab, setTab] = useState<'mine' | 'builtin'>('builtin');
   const [apply, setApply] = useState<TemplateDTO | null>(null);
   const [create, setCreate] = useState(false);

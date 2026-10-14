@@ -87,6 +87,7 @@ export function startScheduler(ctx: AppContext): Scheduler {
       pruneNotifications(ctx);
       pruneOldEvents(ctx);
       pruneJobs(ctx);
+      ctx.sqlite.prepare('DELETE FROM client_mutations WHERE applied_at < ?').run(new Date(Date.now() - 7 * 86_400_000).toISOString());
     });
   });
 

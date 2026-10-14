@@ -86,7 +86,7 @@ export function SetupPage() {
   return (
     <Card title="Welcome" sub="Create the owner account. The setup code is printed in the server console.">
       <form onSubmit={submit} className="space-y-3">
-        <Field label="Setup code" htmlFor="sc" hint="Shown when the server starts, or run: pnpm --filter @wos/server cli setup-code"><Input id="sc" autoComplete="off" autoCapitalize="none" required value={f.setupCode} onChange={set('setupCode')} /></Field>
+        <Field label="Setup code" htmlFor="sc" hint="Shown when the server starts, or run: docker compose exec app node dist/cli.js setup-code"><Input id="sc" autoComplete="off" autoCapitalize="none" required value={f.setupCode} onChange={set('setupCode')} /></Field>
         <Field label="Your name" htmlFor="dn"><Input id="dn" autoComplete="name" required value={f.displayName} onChange={set('displayName')} /></Field>
         <Field label="Username" htmlFor="un"><Input id="un" autoComplete="username" autoCapitalize="none" required minLength={3} value={f.username} onChange={set('username')} /></Field>
         <Field label="Password" htmlFor="pw" hint="At least 12 characters with upper case, lower case and a number."><Input id="pw" type="password" autoComplete="new-password" required value={f.password} onChange={set('password')} aria-invalid={!!pwErr} /></Field>

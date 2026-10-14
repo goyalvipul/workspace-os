@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -21,6 +20,7 @@ export function MonthGrid({ month, byDay, today, weekStart, selected, onSelect }
   const first = startOfWeek(startOfMonth(month), weekStart);
   const last = addDays(startOfWeek(endOfMonth(month), weekStart), 6);
   const days = rangeDays(first, last);
+  const weeks = Array.from({ length: days.length / 7 }, (_, i) => days.slice(i * 7, i * 7 + 7));
   const heads = days.slice(0, 7).map((d) => WEEKDAY_NAMES[weekdayIdx(d)] as string);
   return (
     <div role="grid" aria-label={`${monthName(parseDate(month).m)} ${parseDate(month).y}`} className="overflow-hidden rounded-xl border border-line">
@@ -31,8 +31,9 @@ export function MonthGrid({ month, byDay, today, weekStart, selected, onSelect }
           </span>
         ))}
       </div>
-      <div className="grid grid-cols-7">
-        {days.map((d) => {
+      {weeks.map((week) => (
+      <div key={week[0]} role="row" className="grid grid-cols-7">
+        {week.map((d) => {
           const b = byDay.get(d);
           const tasks = (b?.tasks ?? []).map(taskOf);
           const events = b?.events ?? [];
@@ -45,9 +46,9 @@ export function MonthGrid({ month, byDay, today, weekStart, selected, onSelect }
               aria-label={`${formatLongDate(d)}: ${events.length} events, ${tasks.length} tasks`}
               aria-selected={selected === d}
               onClick={() => onSelect(d)}
-              className={clsx('min-h-[64px] border-b border-r border-line p-1 text-left align-top hover:bg-surface md:min-h-[92px]', !inMonth && 'opacity-40', selected === d && 'bg-surface')}
+              className={clsx('min-h-[64px] border-b border-r border-line p-1 text-left align-top hover:bg-surface md:min-h-[92px]', selected === d && 'bg-surface')}
             >
-              <span className={clsx('mb-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs', d === today && 'bg-accent font-bold text-accent-fg')}>{parseDate(d).d}</span>
+              <span className={clsx('mb-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs', d === today && 'bg-accent font-bold text-accent-fg', d !== today && !inMonth && 'text-muted')}>{parseDate(d).d}</span>
               <span className="hidden space-y-0.5 md:block">
                 {events.slice(0, 2).map((e) => (
                   <span key={e.id} className="flex items-center gap-1 truncate rounded px-1 text-[11px]" style={{ background: `color-mix(in srgb, ${e.color} 22%, transparent)` }}>
@@ -74,6 +75,7 @@ export function MonthGrid({ month, byDay, today, weekStart, selected, onSelect }
           );
         })}
       </div>
+      ))}
     </div>
   );
 }

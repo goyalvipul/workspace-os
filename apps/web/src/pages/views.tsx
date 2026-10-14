@@ -1,6 +1,6 @@
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Plus, Star, Settings2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { addDays, agendaDate, formatDateLabel, isOverdue, monthName, parseDate, selectUpcoming, startOfWeek, rangeDays, weekdayOf, compareTasks, type CalendarEventDTO, type TaskDTO } from '@wos/shared';
+import { addDays, formatDateLabel, isOverdue, monthName, parseDate, selectUpcoming, startOfWeek, rangeDays, weekdayOf, compareTasks, type CalendarEventDTO, type TaskDTO } from '@wos/shared';
 import { EventBlock } from '../components/EventRow';
 import { PageHeader } from '../components/PageHeader';
 import { TaskList } from '../components/TaskRow';
@@ -324,7 +324,7 @@ export function UpcomingPage() {
             return (
               <button key={d} onClick={() => setAnchor(d)} aria-label={formatDateLabel(d, today)} aria-pressed={sel} className="flex flex-col items-center gap-1 py-1 text-xs text-muted">
                 {wd}
-                <span className={clsx('flex h-9 w-9 items-center justify-center rounded-full text-base', sel || isToday ? 'text-fg' : '', sel && 'bg-accent font-semibold text-accent-fg', !sel && isToday && 'font-bold text-accent-text')}>{parseDate(d).d}</span>
+                <span className={clsx('flex h-9 w-9 items-center justify-center rounded-full text-base', !sel && !isToday && 'text-fg', sel && 'bg-accent font-semibold text-accent-fg', !sel && isToday && 'font-bold text-accent-text')}>{parseDate(d).d}</span>
                 <span className={clsx('h-1 w-1 rounded-full', has && (has.tasks.length || has.events.length) ? 'bg-muted' : 'bg-transparent')} />
               </button>
             );

@@ -10,6 +10,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     auth: { user: UserRow; session: SessionRow } | null;
     idemKey: string | null;
+    idemHash: string | null;
   }
 }
 

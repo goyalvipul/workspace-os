@@ -33,5 +33,5 @@ export default defineConfig({
     }),
   ],
   server: { port: 5173, proxy: { '/api': { target: process.env.API_TARGET ?? 'http://localhost:3000', changeOrigin: false } } },
-  build: { outDir: 'dist', sourcemap: false, target: 'es2022' },
+  build: { outDir: 'dist', sourcemap: false, target: 'es2022', chunkSizeWarningLimit: 1500 },
 });

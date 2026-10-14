@@ -28,7 +28,7 @@ export function registerCalendar(api: Api, ctx: AppContext) {
 
   // OAuth redirect target: top-level GET navigation, SameSite=Lax cookie identifies the session.
   api({
-    method: 'GET', url: '/calendar/oauth/callback/:provider', summary: 'OAuth redirect URI', tag: 'calendar', public: true,
+    method: 'GET', url: '/calendar/oauth/:provider/callback', summary: 'OAuth redirect URI', tag: 'calendar', public: true,
     query: z.object({ code: z.string().optional(), state: z.string().optional(), error: z.string().optional(), error_description: z.string().optional() }),
     handler: async (c) => {
       const back = (q: string) => c.reply.redirect(`/settings/accounts?${q}`);

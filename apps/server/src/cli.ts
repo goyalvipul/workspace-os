@@ -14,7 +14,7 @@ import { rmSync as rm } from 'node:fs';
 const [cmd, ...args] = process.argv.slice(2);
 
 function usage(): never {
-  // eslint-disable-next-line no-console
+   
   console.log(`Workspace OS CLI
 
   setup-code                 Print a fresh one-time setup code (only before an owner exists)
@@ -30,7 +30,7 @@ function usage(): never {
 async function main() {
   const env = loadEnv();
   const log = makeLogger({ ...env, LOG_LEVEL: 'warn' });
-  const log2 = (s: string) => console.log(s); // eslint-disable-line no-console
+  const log2 = (s: string) => console.log(s);  
 
   switch (cmd) {
     case 'setup-code': {
@@ -93,7 +93,7 @@ async function main() {
 }
 
 main().catch((e) => {
-  // eslint-disable-next-line no-console
+   
   console.error(e instanceof Error ? e.message : e);
   process.exit(1);
 });

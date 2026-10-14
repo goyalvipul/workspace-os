@@ -1,12 +1,32 @@
-# Owner actions (only you can do these)
-Last updated: 2026-10-14
+# Owner actions
 
-| # | Step | Why a human must do it | Where | Config key / command | Validation | Status |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | Enable WSL2 for Docker Desktop | Needs admin rights and a reboot | Admin PowerShell | `wsl --install --no-distribution` then reboot, start Docker Desktop | `docker info` shows a Linux server | BLOCKED_EXTERNAL |
-| 2 | Enable Tailscale HTTPS + MagicDNS | Tailnet admin setting | https://login.tailscale.com/admin/dns | enable MagicDNS + HTTPS Certificates | `tailscale serve status` shows an https URL | NOT_DONE |
-| 3 | Run Tailscale Serve | Changes host network config; I will not do it without your approval | PowerShell | `tailscale serve --bg 4390` (verify with `tailscale serve --help`) | open the https URL on phone | NOT_DONE |
-| 4 | Google OAuth app (optional) | Needs your Google account/consent | Google Cloud Console | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Settings > Connected accounts | NOT_DONE |
-| 5 | Microsoft Entra app (optional) | Needs your Microsoft account/consent | Entra admin center | `MS_CLIENT_ID`, `MS_CLIENT_SECRET` | Settings > Connected accounts | NOT_DONE |
-| 6 | Back up `.env` (encryption key) privately | Losing `DATA_ENCRYPTION_KEY` makes stored provider tokens unreadable | your password manager | `DATA_ENCRYPTION_KEY` | restore drill | NOT_DONE |
-| 7 | Install on iPhone | Physical device | Safari > Share > Add to Home Screen | n/a | launches standalone | NOT_DONE |
+Things only you can do. In order of priority.
+
+## 1. Run the app now (no Docker needed)
+```powershell
+cd c:\Users\vipulgoyal\workspace\todo
+pnpm install
+pnpm build
+node --env-file=.env apps/server/dist/index.js
+```
+Open http://localhost:4390. The first-run setup screen asks for a **setup code**, which is printed in the terminal on startup. To print a new one: `pnpm --filter @wos/server cli setup-code`. Choose your username, password (12+ characters), and time zone.
+
+## 2. Enable Docker (BLOCKED_EXTERNAL)
+Docker Desktop is installed but Linux containers cannot start because WSL2 is missing.
+1. Open PowerShell **as Administrator**: `wsl --install --no-distribution`
+2. Reboot, then start Docker Desktop and accept its terms.
+3. `docker compose up -d --build` in the repo root. Check with `node scripts/doctor.mjs`.
+Stop the local `node` server first (both use port 4390).
+
+## 3. Reach it from your iPhone (Tailscale Serve)
+Requires step 2. I did not run this because it changes how your PC is exposed.
+1. Make sure Tailscale is signed in on the PC and on the iPhone (same tailnet).
+2. `tailscale serve --bg 4390` (HTTPS, tailnet only; do not use Funnel).
+3. Put the resulting `https://<pc>.<tailnet>.ts.net` URL into `.env` as `PUBLIC_BASE_URL` and restart.
+4. Open it in Safari, Share, **Add to Home Screen**. Enable notifications from Settings, Notifications (iOS 16.4+, only works from the installed app).
+
+## 4. Connect real calendars (BLOCKED_EXTERNAL)
+Follow `docs/PROVIDER_NOTES.md` to register a Google and/or Microsoft OAuth app, put the client id/secret into `.env`, restart, then Settings, Calendar accounts, Connect.
+
+## 5. Backups
+Backups run daily to `./backups`. Copy that folder somewhere off the PC regularly. See `docs/BACKUP_RESTORE.md`.

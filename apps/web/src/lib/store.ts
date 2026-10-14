@@ -664,6 +664,7 @@ export const actions = {
     setTask(completeLocal(t));
     if (opts.completeSubtasks) for (const d of descendantsOfTask(id)) if (d.status === 'open') setTask(completeLocal(d));
     enqueue({ kind: 'task.complete', method: 'POST', url: `/tasks/${id}/complete`, body: { completeSubtasks: opts.completeSubtasks || undefined }, needsVersion: true, entity: { type: 'task', id } });
+    toast(`Completed "${t.title.slice(0, 40)}"`, 'success', { label: 'Undo', run: () => actions.reopenTask(id) });
   },
 
   reopenTask(id: string): void {

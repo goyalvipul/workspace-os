@@ -262,7 +262,7 @@ export function createTask(s: Scope, input: TaskCreateInput): { task: TaskDTO; c
   }
   let projectId = input.projectId ?? null;
   let sectionId = input.sectionId ?? null;
-  let parentTaskId = input.parentTaskId ?? null;
+  const parentTaskId = input.parentTaskId ?? null;
   if (parentTaskId) {
     const parent = loadOwnedTask(s, parentTaskId);
     if (parent.deletedAt) throw badRequest('Parent task was deleted', [{ field: 'parentTaskId', message: 'Parent was deleted' }]);

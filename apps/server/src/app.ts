@@ -10,7 +10,9 @@ import type { Env } from './config/env.js';
 import type { AppContext } from './context.js';
 import { AppError } from './errors.js';
 import { SESSION_COOKIE, csrfTokenFor, lookupSession } from './services/auth.js';
-import { safeEqual } from './util.js';
+import { and, eq } from 'drizzle-orm';
+import { schema } from './db/client.js';
+import { nowIso, safeEqual, sha256 } from './util.js';
 import { createApi, isUnsafe } from './routes/kit.js';
 import { registerCore } from './routes/core.js';
 import { registerWorkspace } from './routes/workspace.js';
@@ -66,6 +68,7 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
 
   app.decorateRequest('auth', null);
   app.decorateRequest('idemKey', null);
+  app.decorateRequest('idemHash', null);
 
   // ---------- auth, origin, csrf, idempotency ----------
   app.addHook('onRequest', async (req, reply) => {
@@ -92,6 +95,25 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
       if (!IDEMPOTENCY.test(key)) throw new AppError(400, 'VALIDATION_ERROR', 'Idempotency-Key must be 8-100 characters (letters, digits, . _ : -)');
       req.idemKey = key;
     }
+  });
+
+  // Idempotency: a retried unsafe request with the same key + same body replays the stored 2xx response instead of
+  // applying twice (offline outbox retries, flaky mobile networks). Same key with a different body is rejected.
+  app.addHook('preHandler', async (req, reply) => {
+    if (!req.idemKey || !req.auth || !isUnsafe(req.method)) return;
+    const hash = sha256(`${req.method}\n${req.url}\n${JSON.stringify(req.body ?? null)}`);
+    const row = ctx.db.select().from(schema.clientMutations).where(and(eq(schema.clientMutations.ownerUserId, req.auth.user.id), eq(schema.clientMutations.clientMutationId, req.idemKey))).get();
+    if (row) {
+      if (row.requestHash !== hash) throw new AppError(422, 'IDEMPOTENCY_KEY_REUSED', 'This Idempotency-Key was already used with a different request.');
+      return reply.header('idempotent-replay', 'true').code(row.statusCode).type('application/json; charset=utf-8').send(row.responseJson);
+    }
+    req.idemHash = hash;
+  });
+  app.addHook('onSend', async (req, reply, payload) => {
+    if (!req.idemKey || !req.idemHash || !req.auth || reply.statusCode < 200 || reply.statusCode >= 300) return payload;
+    if (typeof payload !== 'string' || !String(reply.getHeader('content-type') ?? '').includes('json')) return payload;
+    ctx.db.insert(schema.clientMutations).values({ clientMutationId: req.idemKey, ownerUserId: req.auth.user.id, requestHash: req.idemHash, statusCode: reply.statusCode, responseJson: payload, appliedAt: nowIso() }).onConflictDoNothing().run();
+    return payload;
   });
 
   // ---------- errors ----------

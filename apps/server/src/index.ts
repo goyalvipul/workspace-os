@@ -9,7 +9,7 @@ import { pushConfigured } from './services/notifications.js';
 function banner(lines: string[]) {
   const width = Math.max(...lines.map((l) => l.length)) + 4;
   const bar = '='.repeat(width);
-  // eslint-disable-next-line no-console
+   
   console.log(['', bar, ...lines.map((l) => `  ${l}`), bar, ''].join('\n'));
 }
 
@@ -18,7 +18,7 @@ async function main() {
   try {
     env = loadEnv();
   } catch (e) {
-    // eslint-disable-next-line no-console
+     
     console.error(e instanceof ConfigError ? e.message : e);
     process.exit(1);
   }
@@ -78,7 +78,7 @@ async function main() {
 }
 
 main().catch((e) => {
-  // eslint-disable-next-line no-console
+   
   console.error('Fatal startup error:', e instanceof Error ? e.message : e);
   process.exit(1);
 });

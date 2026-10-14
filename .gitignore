@@ -17,3 +17,4 @@ playwright-report/
 .DS_Store
 coverage/
 apps/web/dev-dist
+.test-data-*.txt
