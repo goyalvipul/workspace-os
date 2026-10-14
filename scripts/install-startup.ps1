@@ -12,7 +12,11 @@ $script = Join-Path $PSScriptRoot 'run-server.ps1'
 $ps = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $action = New-ScheduledTaskAction -Execute $ps -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`"" -WorkingDirectory (Split-Path -Parent $PSScriptRoot)
 $me = (whoami).Trim()   # e.g. MACHINE\user; $env:USERDOMAIN can be wrong on workgroup PCs
-$trigger = New-ScheduledTaskTrigger -AtLogOn -User $me
+$logon = New-ScheduledTaskTrigger -AtLogOn -User $me
+# Watchdog: every 5 minutes try to start it. With MultipleInstances=IgnoreNew this does nothing while the server is running,
+# and brings it back within 5 minutes if the process was killed (for example when a session ends).
+$watchdog = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
+$trigger = @($logon, $watchdog)
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
 $principal = New-ScheduledTaskPrincipal -UserId $me -LogonType Interactive -RunLevel Limited
 Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force | Out-Null
