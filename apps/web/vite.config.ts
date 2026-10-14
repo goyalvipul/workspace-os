@@ -10,6 +10,7 @@ const noRocketLoader = (): Plugin => ({
 });
 
 export default defineConfig({
+  define: { 'import.meta.env.VITE_BUILD_ID': JSON.stringify(new Date().toISOString()) },
   plugins: [
     react(),
     noRocketLoader(),

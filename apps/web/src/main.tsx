@@ -6,6 +6,9 @@ import { registerSW } from 'virtual:pwa-register';
 import { App } from './App';
 import './styles.css';
 
+// Identifies the running build (visible as <html data-build> in dev tools) when checking that a device picked up an update.
+document.documentElement.dataset.build = String(import.meta.env.VITE_BUILD_ID ?? 'dev');
+
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 15_000 } } });
 
 createRoot(document.getElementById('root') as HTMLElement).render(

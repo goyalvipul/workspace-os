@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 
+/* App-like feel on phones: no grey flash on tap, and no rubber-band scrolling of the whole page. */
+html {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
 :root,
 :root[data-theme='dark'] {
   --bg: #1c1c1e;

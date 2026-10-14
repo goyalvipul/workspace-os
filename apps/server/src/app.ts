@@ -150,8 +150,9 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
       // wildcard:true resolves files per request. With false, @fastify/static registers one route per file that exists at startup,
       // so assets from a later web rebuild would 404 until the server restarts.
       wildcard: true,
-      index: false,
+      index: 'index.html', // serves "/" (headers for it come from setHeaders below)
       dotfiles: 'ignore',
+      cacheControl: false, // our setHeaders below decides (otherwise the plugin overwrites it with max-age=0)
       setHeaders: (res, path) => {
         if (/(^|[\\/])(sw\.js|workbox-[^\\/]+\.js|index\.html|manifest\.webmanifest|registerSW\.js)$/.test(path)) res.setHeader('cache-control', 'no-cache, no-transform');
         else if (/[\\/]assets[\\/]/.test(path)) res.setHeader('cache-control', 'public, max-age=31536000, immutable');
