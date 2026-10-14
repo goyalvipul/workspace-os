@@ -147,8 +147,11 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
     const indexHtml = () => readFileSync(indexPath);
     await app.register(fastifyStatic, {
       root: dist,
-      wildcard: false,
+      // wildcard:true resolves files per request. With false, @fastify/static registers one route per file that exists at startup,
+      // so assets from a later web rebuild would 404 until the server restarts.
+      wildcard: true,
       index: false,
+      dotfiles: 'ignore',
       setHeaders: (res, path) => {
         if (/(^|[\\/])(sw\.js|workbox-[^\\/]+\.js|index\.html|manifest\.webmanifest|registerSW\.js)$/.test(path)) res.setHeader('cache-control', 'no-cache, no-transform');
         else if (/[\\/]assets[\\/]/.test(path)) res.setHeader('cache-control', 'public, max-age=31536000, immutable');
