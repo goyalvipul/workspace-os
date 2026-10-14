@@ -80,6 +80,29 @@ describe('projects, tasks and views', () => {
     expect(s.status).toBe(201);
   });
 
+  it('board columns: at most one Done column per project, and the flag survives patch + reorder', async () => {
+    const proj = (await c.call('POST', `${V}/projects`, { name: 'Board test', defaultView: 'board' })).json.project.id as string;
+    const prog = await c.call('POST', `${V}/projects/${proj}/sections`, { name: 'In Progress' });
+    const done1 = await c.call('POST', `${V}/projects/${proj}/sections`, { name: 'Done', isDone: true });
+    expect(prog.json.section.isDone).toBe(false);
+    expect(done1.json.section.isDone).toBe(true);
+
+    // a second Done column takes over the flag
+    const review = await c.call('POST', `${V}/projects/${proj}/sections`, { name: 'Shipped' });
+    const flip = await c.call('PATCH', `${V}/sections/${review.json.section.id}`, { version: review.json.section.version, isDone: true });
+    expect(flip.status).toBe(200);
+    expect(flip.json.section.isDone).toBe(true);
+    const list = await c.call('GET', `${V}/projects/${proj}/sections`);
+    const flags = Object.fromEntries(list.json.items.map((s: { name: string; isDone: boolean }) => [s.name, s.isDone]));
+    expect(flags).toEqual({ 'In Progress': false, Done: false, Shipped: true });
+
+    // reorder columns
+    const ids = list.json.items.map((s: { id: string }) => s.id).reverse();
+    expect((await c.call('POST', `${V}/sections/reorder`, { projectId: proj, ids })).status).toBe(200);
+    const after = await c.call('GET', `${V}/projects/${proj}/sections`);
+    expect(after.json.items.map((s: { id: string }) => s.id)).toEqual(ids);
+  });
+
   it('creates, patches and soft-deletes tasks with optimistic concurrency', async () => {
     const created = await c.call('POST', `${V}/tasks`, { title: 'Pay rent', projectId, dueDate: today(), priority: 1 });
     expect(created.status).toBe(201);

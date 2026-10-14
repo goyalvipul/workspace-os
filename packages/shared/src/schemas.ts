@@ -187,13 +187,14 @@ export const sectionSchema = z.object({
   name: z.string(),
   sortOrder: z.number(),
   archivedAt: isoUtc.nullable(),
+  isDone: z.boolean().default(false),
   createdAt: isoUtc,
   updatedAt: isoUtc,
   version: z.number().int(),
 });
 export type SectionDTO = z.infer<typeof sectionSchema>;
-export const sectionCreateInput = z.object({ id: ulid.optional(), name: z.string().trim().min(1).max(120) });
-export const sectionPatchInput = z.object({ version: z.number().int().min(1), name: z.string().trim().min(1).max(120).optional(), archived: z.boolean().optional() });
+export const sectionCreateInput = z.object({ id: ulid.optional(), name: z.string().trim().min(1).max(120), isDone: z.boolean().optional() });
+export const sectionPatchInput = z.object({ version: z.number().int().min(1), name: z.string().trim().min(1).max(120).optional(), archived: z.boolean().optional(), isDone: z.boolean().optional() });
 
 export const labelSchema = z.object({
   id: ulid,

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import {
   newId,
   addDays,
@@ -164,7 +164,13 @@ export function reorderProjects(s: Scope, ids: string[]): void {
 }
 
 // ====================== Sections ======================
-export function createSection(s: Scope, projectId: string, input: { id?: string; name: string }): SectionDTO {
+/** At most one Done column per project: marking one clears the flag on the others. */
+function clearOtherDone(s: Scope, projectId: string, keepId: string, now: string): void {
+  const others = s.tx.select().from(S).where(and(eq(S.projectId, projectId), eq(S.isDone, true), ne(S.id, keepId))).all();
+  for (const o of others) s.tx.update(S).set({ isDone: false, updatedAt: now, version: o.version + 1 }).where(eq(S.id, o.id)).run();
+}
+
+export function createSection(s: Scope, projectId: string, input: { id?: string; name: string; isDone?: boolean }): SectionDTO {
   loadProject(s, projectId);
   if (input.id) {
     const ex = s.tx.select().from(S).where(eq(S.id, input.id)).get();
@@ -176,7 +182,8 @@ export function createSection(s: Scope, projectId: string, input: { id?: string;
   const max = s.tx.select({ m: sql<number>`coalesce(max(${S.sortOrder}), 0)` }).from(S).where(eq(S.projectId, projectId)).get()?.m ?? 0;
   const now = nowIso();
   const id = input.id ?? newId();
-  s.tx.insert(S).values({ id, projectId, name: input.name.trim(), sortOrder: max + 1, createdAt: now, updatedAt: now, version: 1 }).run();
+  if (input.isDone) clearOtherDone(s, projectId, id, now);
+  s.tx.insert(S).values({ id, projectId, name: input.name.trim(), sortOrder: max + 1, isDone: !!input.isDone, createdAt: now, updatedAt: now, version: 1 }).run();
   s.ev.activity({ entityType: 'section', entityId: id, projectId, action: 'section.created', summary: `added a section: ${input.name.trim()}` });
   s.ev.emit('project.changed', projectId, { id: projectId });
   return sectionToDTO(s.tx.select().from(S).where(eq(S.id, id)).get() as typeof S.$inferSelect);
@@ -189,12 +196,16 @@ function loadSection(s: Scope, id: string) {
   return sec;
 }
 
-export function patchSection(s: Scope, id: string, input: { version: number; name?: string; archived?: boolean }): SectionDTO {
+export function patchSection(s: Scope, id: string, input: { version: number; name?: string; archived?: boolean; isDone?: boolean }): SectionDTO {
   const sec = loadSection(s, id);
   if (sec.version !== input.version) throw versionConflict(sectionToDTO(sec), input.version);
   const patch: Partial<typeof S.$inferInsert> = {};
   if (input.name !== undefined) patch.name = input.name.trim();
   if (input.archived !== undefined) patch.archivedAt = input.archived ? nowIso() : null;
+  if (input.isDone !== undefined) {
+    patch.isDone = input.isDone;
+    if (input.isDone) clearOtherDone(s, sec.projectId, id, nowIso());
+  }
   s.tx.update(S).set({ ...patch, updatedAt: nowIso(), version: sec.version + 1 }).where(eq(S.id, id)).run();
   s.ev.emit('project.changed', sec.projectId, { id: sec.projectId });
   return sectionToDTO(loadSection(s, id));

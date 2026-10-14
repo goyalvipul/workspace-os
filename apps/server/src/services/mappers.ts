@@ -51,7 +51,7 @@ export function projectToDTO(p: typeof schema.projects.$inferSelect): ProjectDTO
 }
 
 export function sectionToDTO(s: typeof schema.sections.$inferSelect): SectionDTO {
-  return { id: s.id, projectId: s.projectId, name: s.name, sortOrder: s.sortOrder, archivedAt: s.archivedAt, createdAt: s.createdAt, updatedAt: s.updatedAt, version: s.version };
+  return { id: s.id, projectId: s.projectId, name: s.name, sortOrder: s.sortOrder, archivedAt: s.archivedAt, isDone: s.isDone, createdAt: s.createdAt, updatedAt: s.updatedAt, version: s.version };
 }
 
 export function labelToDTO(l: typeof schema.labels.$inferSelect): LabelDTO {

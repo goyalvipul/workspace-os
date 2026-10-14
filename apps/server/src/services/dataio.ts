@@ -179,7 +179,7 @@ export function importWorkspaceJson(s: Scope, raw: unknown): ImportReport {
     const own = owns('sections', sec.id);
     if (own === 'own') { report.skippedExisting++; continue; }
     if (!done.has(sec.projectId)) { report.warnings.push(`Section "${sec.name}" skipped: its project is missing`); continue; }
-    s.tx.insert(schema.sections).values({ id: sec.id, projectId: sec.projectId, name: sec.name, sortOrder: sec.sortOrder, archivedAt: sec.archivedAt, createdAt: sec.createdAt, updatedAt: now, version: 1 }).run();
+    s.tx.insert(schema.sections).values({ id: sec.id, projectId: sec.projectId, name: sec.name, sortOrder: sec.sortOrder, archivedAt: sec.archivedAt, isDone: sec.isDone, createdAt: sec.createdAt, updatedAt: now, version: 1 }).run();
     report.created.sections = (report.created.sections ?? 0) + 1;
   }
   const labelIdMap = new Map<string, string>();

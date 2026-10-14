@@ -742,20 +742,36 @@ export const actions = {
   },
 
   // ---- sections
-  createSection(projectId: string, name: string): SectionDTO {
+  createSection(projectId: string, name: string, opts: { isDone?: boolean } = {}): SectionDTO {
     const now = new Date().toISOString();
     const id = newId();
     const sortOrder = Math.max(0, ...Object.values(get().sections).filter((x) => x.projectId === projectId).map((x) => x.sortOrder)) + 1;
-    const sec: SectionDTO = { id, projectId, name: name.trim(), sortOrder, archivedAt: null, createdAt: now, updatedAt: now, version: 1 };
-    set((s) => ({ sections: { ...s.sections, [id]: sec } }));
-    enqueue({ kind: 'section.create', method: 'POST', url: `/projects/${projectId}/sections`, body: { id, name: sec.name }, entity: { type: 'section', id } });
+    const sec: SectionDTO = { id, projectId, name: name.trim(), sortOrder, archivedAt: null, isDone: !!opts.isDone, createdAt: now, updatedAt: now, version: 1 };
+    set((s) => ({
+      sections: {
+        ...Object.fromEntries(Object.entries(s.sections).map(([k, x]) => [k, opts.isDone && x.projectId === projectId && x.isDone ? { ...x, isDone: false } : x])),
+        [id]: sec,
+      },
+    }));
+    enqueue({ kind: 'section.create', method: 'POST', url: `/projects/${projectId}/sections`, body: { id, name: sec.name, ...(opts.isDone ? { isDone: true } : {}) }, entity: { type: 'section', id } });
     return sec;
   },
-  updateSection(id: string, patch: { name?: string; archived?: boolean }): void {
+  updateSection(id: string, patch: { name?: string; archived?: boolean; isDone?: boolean }): void {
     const cur = get().sections[id];
     if (!cur) return;
-    set((s) => ({ sections: { ...s.sections, [id]: { ...cur, ...(patch.name ? { name: patch.name } : {}), ...(patch.archived !== undefined ? { archivedAt: patch.archived ? new Date().toISOString() : null } : {}) } } }));
+    set((s) => ({
+      sections: {
+        // only one Done column per project
+        ...Object.fromEntries(Object.entries(s.sections).map(([k, x]) => [k, patch.isDone && x.projectId === cur.projectId && x.id !== id && x.isDone ? { ...x, isDone: false } : x])),
+        [id]: { ...cur, ...(patch.name ? { name: patch.name } : {}), ...(patch.isDone !== undefined ? { isDone: patch.isDone } : {}), ...(patch.archived !== undefined ? { archivedAt: patch.archived ? new Date().toISOString() : null } : {}) },
+      },
+    }));
     enqueue({ kind: 'section.patch', method: 'PATCH', url: `/sections/${id}`, body: { ...patch }, needsVersion: true, entity: { type: 'section', id } });
+  },
+  /** Reorders the board columns of a project. `ids` is the new left-to-right order of its sections. */
+  reorderSections(projectId: string, ids: string[]): void {
+    set((s) => ({ sections: Object.fromEntries(Object.entries(s.sections).map(([k, x]) => [k, x.projectId === projectId && ids.includes(x.id) ? { ...x, sortOrder: ids.indexOf(x.id) + 1 } : x])) }));
+    enqueue({ kind: 'section.reorder', method: 'POST', url: '/sections/reorder', body: { projectId, ids }, entity: { type: 'project', id: projectId } });
   },
   deleteSection(id: string): void {
     set((s) => ({

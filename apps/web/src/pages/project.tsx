@@ -1,7 +1,7 @@
 import { closestCorners, DndContext, DragOverlay, KeyboardSensor, PointerSensor, TouchSensor, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Archive, ChevronDown, Columns3, Heart, ListIcon, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Archive, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Columns3, Heart, ListIcon, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { COLORS, sortByPosition, type ProjectDTO, type SectionDTO, type TaskDTO } from '@wos/shared';
@@ -22,7 +22,10 @@ function useProjectData(projectId: string) {
     const open = top.filter((t) => t.status === 'open');
     const done = top.filter((t) => t.status === 'completed').sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
     const bySection = (sid: string | null) => sortByPosition(open.filter((t) => t.sectionId === sid));
-    return { secs, open, done, bySection };
+    const doneSection = secs.find((s) => s.isDone) ?? null;
+    /** Board column contents: open tasks, except the Done column which also shows completed tasks. */
+    const boardTasks = (sec: SectionDTO | null) => sortByPosition(top.filter((t) => t.sectionId === (sec?.id ?? null) && (sec?.isDone ? t.status !== 'archived' : t.status === 'open')));
+    return { secs, top, open, done, bySection, doneSection, boardTasks };
   }, [all, sections, projectId]);
 }
 
@@ -36,6 +39,8 @@ export function ProjectPage() {
   const [showDone, setShowDone] = useState(false);
   const data = useProjectData(id);
   const view = project?.defaultView ?? 'list';
+  // On a board, tasks that live in the Done column are already visible there.
+  const doneList = view === 'board' && data.doneSection ? data.done.filter((t) => t.sectionId !== data.doneSection?.id) : data.done;
   if (!project) return <EmptyState title="Project not found" body="It may have been deleted on another device." art={false}>
     <Button onClick={() => nav('/browse')}>Back to Browse</Button>
   </EmptyState>;
@@ -47,7 +52,15 @@ export function ProjectPage() {
         back="/browse"
         right={
           <>
-            <Segmented label="Project layout" value={view} onChange={(v) => actions.updateProject(id, { defaultView: v })} options={[{ value: 'list', label: 'List' }, { value: 'board', label: 'Board' }]} />
+            <Segmented
+              label="Project layout"
+              value={view}
+              onChange={(v) => {
+                actions.updateProject(id, { defaultView: v });
+                // First time on a board: start with the usual To Do / In Progress / Done columns (To Do = tasks without a section).
+                if (v === 'board' && data.secs.length === 0) setupBoardColumns(id);
+              }}
+              options={[{ value: 'list', label: 'List' }, { value: 'board', label: 'Board' }]} />
             <MenuRoot>
               <MenuTrigger asChild>
                 <IconButton label="Project options">
@@ -85,12 +98,12 @@ export function ProjectPage() {
         </button>
       )}
 
-      {data.done.length > 0 && (
+      {doneList.length > 0 && (
         <section className="mt-6" aria-label="Completed tasks">
           <button className="flex min-h-10 items-center gap-1 text-sm font-semibold text-muted" aria-expanded={showDone} onClick={() => setShowDone(!showDone)}>
-            <ChevronDown size={16} className={clsx('transition-transform', !showDone && '-rotate-90')} aria-hidden /> Completed ({data.done.length})
+            <ChevronDown size={16} className={clsx('transition-transform', !showDone && '-rotate-90')} aria-hidden /> Completed ({doneList.length})
           </button>
-          {showDone && <TaskList tasks={data.done} showDate={false} />}
+          {showDone && <TaskList tasks={doneList} showDate={false} />}
         </section>
       )}
 
@@ -120,7 +133,13 @@ function SectionAdder({ projectId, onClose }: { projectId: string; onClose: () =
 
 type Data = ReturnType<typeof useProjectData>;
 
-function SectionHeader({ section, count }: { section: SectionDTO; count: number }) {
+/** Creates the standard board columns. "To Do" is the unsectioned column, so only the other two are real sections. */
+function setupBoardColumns(projectId: string): void {
+  actions.createSection(projectId, 'In Progress');
+  actions.createSection(projectId, 'Done', { isDone: true });
+}
+
+function SectionHeader({ section, count, onMove }: { section: SectionDTO; count: number; onMove?: { left: (() => void) | null; right: (() => void) | null } }) {
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(section.name);
   const [confirm, setConfirm] = useState(false);
@@ -131,7 +150,10 @@ function SectionHeader({ section, count }: { section: SectionDTO; count: number 
           <Input autoFocus aria-label="Section name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => setRenaming(false)} />
         </form>
       ) : (
-        <h2 className="text-[15px] font-bold">{section.name} <span className="ml-1 text-xs font-normal text-muted">{count}</span></h2>
+        <h2 className="flex items-center gap-1.5 text-[15px] font-bold">
+          {section.isDone && <CheckCircle2 size={15} className="text-ok" aria-label="Done column" />}
+          {section.name} <span className="ml-1 text-xs font-normal text-muted">{count}</span>
+        </h2>
       )}
       <MenuRoot>
         <MenuTrigger asChild>
@@ -139,6 +161,11 @@ function SectionHeader({ section, count }: { section: SectionDTO; count: number 
         </MenuTrigger>
         <MenuContent>
           <MenuItem icon={<Pencil size={16} />} onSelect={() => setRenaming(true)}>Rename</MenuItem>
+          {onMove?.left && <MenuItem icon={<ChevronLeft size={16} />} onSelect={onMove.left}>Move left</MenuItem>}
+          {onMove?.right && <MenuItem icon={<ChevronRight size={16} />} onSelect={onMove.right}>Move right</MenuItem>}
+          <MenuItem icon={<CheckCircle2 size={16} />} onSelect={() => actions.updateSection(section.id, { isDone: !section.isDone })}>
+            {section.isDone ? 'Stop using as Done column' : 'Use as Done column'}
+          </MenuItem>
           <MenuItem icon={<Archive size={16} />} onSelect={() => actions.updateSection(section.id, { archived: true })}>Archive</MenuItem>
           <MenuItem danger icon={<Trash2 size={16} />} onSelect={() => setConfirm(true)}>Delete</MenuItem>
         </MenuContent>
@@ -178,7 +205,7 @@ function BoardCard({ task, onToggle }: { task: TaskDTO; onToggle: (t: TaskDTO) =
   );
 }
 
-function BoardColumn({ id, title, tasks, onAdd, onToggle, header }: { id: string; title: string; tasks: TaskDTO[]; onAdd: () => void; onToggle: (t: TaskDTO) => void; header?: React.ReactNode }) {
+function BoardColumn({ id, title, tasks, onAdd, onToggle, header, done }: { id: string; title: string; tasks: TaskDTO[]; onAdd?: () => void; onToggle: (t: TaskDTO) => void; header?: React.ReactNode; done?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${id}`, data: { type: 'column', sectionId: id === 'none' ? null : id } });
   return (
     <section aria-label={title} className={clsx('flex w-[290px] shrink-0 flex-col rounded-xl bg-bg/60 p-2', isOver && 'ring-2 ring-accent-text')}>
@@ -187,11 +214,52 @@ function BoardColumn({ id, title, tasks, onAdd, onToggle, header }: { id: string
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((t) => <BoardCard key={t.id} task={t} onToggle={onToggle} />)}
         </SortableContext>
+        {!tasks.length && <p className="px-2 py-3 text-center text-xs text-muted">{done ? 'Drop a card here to complete it' : 'Drop cards here'}</p>}
       </div>
-      <button className="flex min-h-10 items-center gap-2 px-2 text-sm text-muted hover:text-accent-text" onClick={onAdd}>
-        <Plus size={16} aria-hidden /> Add task
-      </button>
+      {onAdd && (
+        <button className="flex min-h-10 items-center gap-2 px-2 text-sm text-muted hover:text-accent-text" onClick={onAdd}>
+          <Plus size={16} aria-hidden /> Add task
+        </button>
+      )}
     </section>
+  );
+}
+
+function AddColumn({ projectId, hasColumns }: { projectId: string; hasColumns: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const close = () => {
+    setOpen(false);
+    setName('');
+  };
+  return (
+    <div className="flex w-[290px] shrink-0 flex-col gap-2 rounded-xl border border-dashed border-line p-2">
+      {open ? (
+        <form
+          className="flex flex-col gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (name.trim()) actions.createSection(projectId, name);
+            close();
+          }}
+        >
+          <Input autoFocus aria-label="Column name" placeholder="Column name, e.g. Review" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
+          <div className="flex gap-2">
+            <Button type="submit" variant="primary" size="sm" disabled={!name.trim()}>Add column</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={close}>Cancel</Button>
+          </div>
+        </form>
+      ) : (
+        <button className="flex min-h-10 items-center gap-2 px-2 text-sm text-muted hover:text-accent-text" onClick={() => setOpen(true)}>
+          <Plus size={16} aria-hidden /> Add column
+        </button>
+      )}
+      {!hasColumns && !open && (
+        <button className="px-2 pb-1 text-left text-xs text-muted underline hover:text-accent-text" onClick={() => setupBoardColumns(projectId)}>
+          Add In Progress and Done columns
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -199,10 +267,11 @@ function BoardLayout({ project, data }: { project: ProjectDTO; data: Data }) {
   const { toggle, dialog } = useToggleTask();
   const [active, setActive] = useState<TaskDTO | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
-  const columns = [{ id: 'none', title: 'No section', tasks: data.bySection(null), section: null as SectionDTO | null }, ...data.secs.map((s) => ({ id: s.id, title: s.name, tasks: data.bySection(s.id), section: s }))];
+  // The first column ("To Do") holds tasks that have no section; every other column is a section.
+  const columns = [{ id: 'none', title: 'To Do', tasks: data.boardTasks(null), section: null as SectionDTO | null }, ...data.secs.map((s) => ({ id: s.id, title: s.name, tasks: data.boardTasks(s), section: s }))];
   const colOf = (taskId: string) => columns.find((c) => c.tasks.some((t) => t.id === taskId));
 
-  const onStart = (e: DragStartEvent) => setActive(data.open.find((t) => t.id === e.active.id) ?? null);
+  const onStart = (e: DragStartEvent) => setActive(data.top.find((t) => t.id === e.active.id) ?? null);
   const onEnd = (e: DragEndEvent) => {
     setActive(null);
     const { active: a, over } = e;
@@ -222,16 +291,60 @@ function BoardLayout({ project, data }: { project: ProjectDTO; data: Data }) {
     const ids = toCol.tasks.filter((t) => t.id !== taskId).map((t) => t.id);
     ids.splice(Math.min(index, ids.length), 0, taskId);
     if (from?.id === toCol.id && ids.join() === toCol.tasks.map((t) => t.id).join()) return;
-    actions.reorderTask(taskId, { projectId: project.id, sectionId: toCol.section?.id ?? null }, ids);
+    const task = data.top.find((t) => t.id === taskId);
+    const target = { projectId: project.id, sectionId: toCol.section?.id ?? null };
+    // Moving into the Done column completes the task; moving out of it reopens it.
+    if (task && toCol.section?.isDone && task.status === 'open') {
+      if (task.recurrence) actions.completeTask(taskId); // a repeating task advances to its next date and stays where it was
+      else {
+        actions.reorderTask(taskId, target, ids);
+        actions.completeTask(taskId);
+      }
+      return;
+    }
+    if (task && task.status === 'completed' && !toCol.section?.isDone) actions.reopenTask(taskId);
+    actions.reorderTask(taskId, target, ids);
+  };
+
+  // Ticking a card's checkbox also moves it to the Done column (and back to To Do when unticked there).
+  const onToggle = (t: TaskDTO) => {
+    const wasOpen = t.status === 'open';
+    const doneSec = data.doneSection;
+    toggle(t);
+    const after = useStore.getState().tasks[t.id];
+    if (!after) return;
+    if (wasOpen && after.status === 'completed' && doneSec && !t.recurrence && t.sectionId !== doneSec.id) {
+      actions.reorderTask(t.id, { projectId: project.id, sectionId: doneSec.id }, [...data.boardTasks(doneSec).map((x) => x.id), t.id]);
+    } else if (!wasOpen && after.status === 'open' && t.sectionId && data.secs.find((s) => s.id === t.sectionId)?.isDone) {
+      actions.reorderTask(t.id, { projectId: project.id, sectionId: null }, [...data.boardTasks(null).map((x) => x.id), t.id]);
+    }
+  };
+
+  const move = (i: number, dir: -1 | 1) => {
+    const order = data.secs.map((s) => s.id);
+    const j = i + dir;
+    if (j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j] as string, order[i] as string];
+    actions.reorderSections(project.id, order);
   };
 
   return (
     <div className="-mx-4 overflow-x-auto px-4 pb-4 scroll-thin">
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onStart} onDragEnd={onEnd} onDragCancel={() => setActive(null)}>
         <div className="flex items-start gap-3">
-          {columns.map((c) => (
-            <BoardColumn key={c.id} id={c.id} title={c.title} tasks={c.tasks} onToggle={toggle} onAdd={() => actions.openQuickAdd({ projectId: project.id, sectionId: c.section?.id ?? null })} header={c.section ? <SectionHeader section={c.section} count={c.tasks.length} /> : undefined} />
+          {columns.map((c, ci) => (
+            <BoardColumn
+              key={c.id}
+              id={c.id}
+              title={c.title}
+              tasks={c.tasks}
+              done={!!c.section?.isDone}
+              onToggle={onToggle}
+              onAdd={c.section?.isDone ? undefined : () => actions.openQuickAdd({ projectId: project.id, sectionId: c.section?.id ?? null })}
+              header={c.section ? <SectionHeader section={c.section} count={c.tasks.length} onMove={{ left: ci > 1 ? () => move(ci - 1, -1) : null, right: ci - 1 < data.secs.length - 1 ? () => move(ci - 1, 1) : null }} /> : undefined}
+            />
           ))}
+          <AddColumn projectId={project.id} hasColumns={data.secs.length > 0} />
         </div>
         <DragOverlay>{active ? <div className="rounded-lg border border-accent-text bg-surface shadow-xl"><TaskRow task={active} onToggle={() => undefined} /></div> : null}</DragOverlay>
       </DndContext>
@@ -239,7 +352,6 @@ function BoardLayout({ project, data }: { project: ProjectDTO; data: Data }) {
     </div>
   );
 }
-
 function ProjectEditor({ project, open, onClose }: { project: ProjectDTO; open: boolean; onClose: () => void }) {
   const tree = useProjectTree();
   const [name, setName] = useState(project.name);

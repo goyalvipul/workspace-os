@@ -74,6 +74,8 @@ export const sections = sqliteTable(
     name: text('name').notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
     archivedAt: text('archived_at'),
+    /** Board column whose cards are completed tasks (dropping a card here completes it). At most one per project. */
+    isDone: integer('is_done', { mode: 'boolean' }).notNull().default(false),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
     version: integer('version').notNull().default(1),

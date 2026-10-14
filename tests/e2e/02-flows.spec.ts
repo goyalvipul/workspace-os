@@ -91,6 +91,60 @@ test('quick add pickers: date, repeat, labels, reminder and project all open and
   await expect(sheet.getByText(/10 minutes before/).first()).toBeVisible();
 });
 
+test('board: To Do / In Progress / Done columns, custom column, drag and complete', async ({ page }, info) => {
+  const proj = `Board ${info.project.name}`;
+  const title = `Card ${info.project.name}`;
+  await page.goto('/browse');
+  await page.getByRole('button', { name: 'Add project' }).click();
+  await page.getByLabel('Project name').fill(proj);
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('heading', { name: proj })).toBeVisible();
+
+  await page.getByRole('radio', { name: 'Board' }).click();
+  const col = (name: string) => page.getByRole('region', { name, exact: true });
+  await expect(col('To Do')).toBeVisible();
+  await expect(col('In Progress')).toBeVisible();
+  await expect(col('Done')).toBeVisible();
+
+  // custom column
+  await page.getByRole('button', { name: 'Add column' }).click();
+  await page.getByLabel('Column name').fill('Review');
+  await page.getByRole('button', { name: 'Add column' }).click();
+  await expect(col('Review')).toBeVisible();
+
+  // add a card in To Do
+  await col('To Do').getByRole('button', { name: 'Add task' }).click();
+  const dlg = page.getByRole('dialog');
+  await dlg.getByLabel('Task name').fill(title);
+  await dlg.getByRole('button', { name: /Add task/ }).click();
+  await expect(dlg).toBeHidden();
+  const card = col('To Do').getByRole('button', { name: `Open ${title}`, exact: true });
+  await expect(card).toBeVisible();
+
+  // drag To Do -> In Progress (desktop only: on a phone the next column is off-screen for a mouse drag)
+  let startCol = 'To Do';
+  if (info.project.name === 'desktop') {
+    const from = await card.boundingBox();
+    const to = await col('In Progress').boundingBox();
+    if (!from || !to) throw new Error('no boxes');
+    await page.mouse.move(from.x + 40, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + 60, from.y + from.height / 2 + 10, { steps: 5 });
+    await page.mouse.move(to.x + to.width / 2, to.y + 80, { steps: 15 });
+    await page.mouse.up();
+    await expect(col('In Progress').getByRole('button', { name: `Open ${title}`, exact: true })).toBeVisible();
+    startCol = 'In Progress';
+  }
+
+  // ticking the checkbox moves it to Done and keeps it visible there
+  await expect(page.getByRole('checkbox', { name: `Complete ${title}`, exact: true })).toHaveCount(1); // drop animation finished
+  await col(startCol).getByRole('checkbox', { name: `Complete ${title}`, exact: true }).click();
+  await expect(col('Done').getByRole('button', { name: `Open ${title}`, exact: true })).toBeVisible();
+  await expect(col(startCol).getByRole('button', { name: `Open ${title}`, exact: true })).toBeHidden();
+  // reopening from Done sends it back to To Do
+  await col('Done').getByRole('checkbox', { name: `Reopen ${title}`, exact: true }).click();
+  await expect(col('To Do').getByRole('button', { name: `Open ${title}`, exact: true })).toBeVisible();
+});
 test('offline: changes queue locally and sync when the connection returns', async ({ page, context }, info) => {
   const title = `Offline task ${info.project.name}`;
   await page.goto('/today');
