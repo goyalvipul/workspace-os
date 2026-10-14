@@ -34,5 +34,5 @@ A pre-migration safety copy of the database is made automatically if the schema 
 - `powershell -ExecutionPolicy Bypass -File scripts/install-startup.ps1` registers a per-user scheduled task, **WorkspaceOS Server**, that runs `scripts/run-server.ps1` at logon and restarts it if it crashes. No admin rights needed.
 - The server listens on `127.0.0.1:4390` only; `tailscale serve --bg --https=443 http://127.0.0.1:4390` publishes it to the tailnet (Serve must be enabled once in the Tailscale admin console). Set `PUBLIC_BASE_URL` and `TRUSTED_ORIGINS` in `.env` to the `https://<machine>.<tailnet>.ts.net` address.
 - Log: `data/server.log`. Start/stop: `Start-ScheduledTask` / `Stop-ScheduledTask -TaskName 'WorkspaceOS Server'`. Remove: `scripts/install-startup.ps1 -Remove`.
-- After rebuilding (`pnpm build`) restart the task so it picks up the new bundle.
+- After rebuilding (`pnpm build`) or editing `.env`, run `powershell -ExecutionPolicy Bypass -File scripts/restart-server.ps1`. Stopping the task alone leaves the node process running with the old settings.
 
