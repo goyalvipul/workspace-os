@@ -17,6 +17,13 @@ const set = (key, value) => {
   const re = new RegExp(`^${key}=.*$`, 'm');
   text = re.test(text) ? text.replace(re, () => `${key}=${value}`) : `${text.trimEnd()}\n${key}=${value}\n`;
 };
+if (process.argv.includes('--native')) {
+  // Running with plain Node (no Docker): loopback only, data next to the repo instead of the container's /data.
+  set('APP_HOST', '127.0.0.1');
+  set('APP_PORT', '4390');
+  set('DATABASE_PATH', './data/workspace.sqlite');
+  set('BACKUP_DIR', './backups');
+}
 set('SESSION_SECRET', randomBytes(48).toString('base64url'));
 set('DATA_ENCRYPTION_KEY', randomBytes(32).toString('base64'));
 try {
