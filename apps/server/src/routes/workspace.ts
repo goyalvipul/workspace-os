@@ -35,7 +35,7 @@ import { notFound } from '../errors.js';
 import { ensureCoverage, enqueue, listCalendars } from '../calendar/service.js';
 import { filterToDTO, getTaskDTO, hydrateTasks, labelToDTO, projectToDTO, sectionToDTO, templateToDTO } from '../services/mappers.js';
 import { activityList, reportSummary, search, viewCalendar, viewInbox, viewToday, viewUpcoming } from '../services/queries.js';
-import { bulkTasks, completeTask, createTask, deleteTask, patchTask, queryTasks, reopenTask, reorderTask, restoreTask } from '../services/tasks.js';
+import { archiveTask, bulkTasks, completeTask, unarchiveTask, createTask, deleteTask, patchTask, queryTasks, reopenTask, reorderTask, restoreTask } from '../services/tasks.js';
 import {
   addComment, addReminder, applyTemplate, createFilter, createLabel, createProject, createSection, createTemplate,
   deleteComment, deleteFilter, deleteLabel, deleteProject, deleteReminder, deleteSection, deleteTemplate, listComments,
@@ -102,6 +102,8 @@ export function registerWorkspace(api: Api, ctx: AppContext) {
   api({ method: 'PATCH', url: '/tasks/:id', summary: 'Update a task (needs current version)', tag: 'tasks', body: taskPatchInput, handler: (c) => ({ task: c.tx((s) => patchTask(s, c.params.id as string, c.body)) }) });
   api({ method: 'DELETE', url: '/tasks/:id', summary: 'Soft-delete a task and its subtasks', tag: 'tasks', handler: (c) => ({ task: c.tx((s) => deleteTask(s, c.params.id as string)) }) });
   api({ method: 'POST', url: '/tasks/:id/restore', summary: 'Restore a soft-deleted task', tag: 'tasks', handler: (c) => ({ task: c.tx((s) => restoreTask(s, c.params.id as string)) }) });
+  api({ method: 'POST', url: '/tasks/:id/archive', summary: 'Archive a task and its subtasks (hidden from all views, restorable)', tag: 'tasks', handler: (c) => ({ task: c.tx((s) => archiveTask(s, c.params.id as string)) }) });
+  api({ method: 'POST', url: '/tasks/:id/unarchive', summary: 'Restore an archived task', tag: 'tasks', handler: (c) => ({ task: c.tx((s) => unarchiveTask(s, c.params.id as string)) }) });
   api({
     method: 'POST', url: '/tasks/:id/complete', summary: 'Complete a task (or the current occurrence of a recurring task)', tag: 'tasks', body: completeInput,
     handler: (c) => ({ task: c.tx((s) => completeTask(s, c.params.id as string, c.body)) }),

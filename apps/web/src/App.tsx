@@ -4,7 +4,8 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Shell } from './components/Shell';
 import { Button, Spinner, Toaster } from './components/ui';
 import { setUnauthenticatedHandler } from './lib/api';
-import { boot, useStore } from './lib/store';
+import { actions, boot, useStore } from './lib/store';
+import { ArchivedPage } from './pages/archived';
 import { startSync } from './lib/sync';
 import { ActivityPage } from './pages/activity';
 import { LoginPage, SetupPage } from './pages/auth';
@@ -13,6 +14,28 @@ import { BrowsePage, FilterTasksPage, LabelsPage, LabelTasksPage, SearchPage, Te
 import { ProjectPage } from './pages/project';
 import { SettingsPage } from './pages/settings';
 import { InboxPage, TodayPage, UpcomingPage } from './pages/views';
+
+// "/?add=Buy milk tomorrow" (from a Siri / Shortcuts "Open URL" action or the installed app's "Add task" shortcut) opens Quick Add pre-filled.
+let launchAdd: string | null = (() => {
+  try { return new URLSearchParams(window.location.search).get('add'); } catch { return null; }
+})();
+
+function LaunchActions() {
+  const status = useStore((s) => s.status);
+  useEffect(() => {
+    if (status !== 'authed' || launchAdd === null) return;
+    const text = launchAdd === '1' ? '' : launchAdd;
+    launchAdd = null;
+    actions.openQuickAdd(text ? { text } : null);
+  }, [status]);
+  return null;
+}
+
+/** Opens the view chosen in Settings → General → Home view. */
+function HomeRedirect() {
+  const view = useStore((s) => s.prefs['general.homeView'] as string);
+  return <Navigate to={`/${view || 'today'}`} replace />;
+}
 
 function Gate() {
   const status = useStore((s) => s.status);
@@ -53,7 +76,7 @@ export function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/setup" element={<SetupPage />} />
         <Route element={<Gate />}>
-          <Route index element={<Navigate to="/today" replace />} />
+          <Route index element={<HomeRedirect />} />
           <Route path="inbox" element={<InboxPage />} />
           <Route path="today" element={<TodayPage />} />
           <Route path="upcoming" element={<UpcomingPage />} />
@@ -66,12 +89,14 @@ export function App() {
           <Route path="filter/:id" element={<FilterTasksPage />} />
           <Route path="templates" element={<TemplatesPage />} />
           <Route path="activity" element={<ActivityPage />} />
+          <Route path="archived" element={<ArchivedPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/:section" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/today" replace />} />
         </Route>
       </Routes>
       <UpdateBanner />
+      <LaunchActions />
       <Toaster />
     </>
   );

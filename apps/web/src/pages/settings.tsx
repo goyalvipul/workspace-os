@@ -1,25 +1,32 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, CalendarDays, ChevronRight, Database, Info, LogOut, Palette, RefreshCw, ShieldCheck, SlidersHorizontal, Stethoscope, Trash2, User as UserIcon, Clock, Archive } from 'lucide-react';
+import { AlarmClock, Bell, CalendarDays, ChevronRight, Database, Info, LifeBuoy, LogOut, Mic, Palette, RefreshCw, Settings2, ShieldCheck, SlidersHorizontal, Sparkles, Stethoscope, Target, Trash2, User as UserIcon, Clock, Archive } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { passwordSchema, type CalendarAccountDTO, type CalendarProviderInfo, type SyncStatusDTO } from '@wos/shared';
 import { PageHeader } from '../components/PageHeader';
+import { Digests, General, Help, Integrations, Productivity, Reminders, Row, WhatsNew } from './settings-extra';
 import { Button, Confirm, EmptyState, Field, Input, Segmented, Select, Sheet, SheetHeader, Spinner, Switch, clsx } from '../components/ui';
 import { api, download, errorMessage } from '../lib/api';
 import { useExternalCalendars, useHour12, useTz } from '../lib/hooks';
 import { actions, applyTheme, logout, refresh, toast, useStore } from '../lib/store';
 
 const SECTIONS: { id: string; label: string; icon: ReactNode; hint: string }[] = [
-  { id: 'profile', label: 'Profile', icon: <UserIcon size={20} />, hint: 'Name, email, username' },
+  { id: 'profile', label: 'Account', icon: <UserIcon size={20} />, hint: 'Name, email, username' },
+  { id: 'general', label: 'General', icon: <Settings2 size={20} />, hint: 'Home view, dates, swipe actions, sound, sync' },
   { id: 'appearance', label: 'Appearance', icon: <Palette size={20} />, hint: 'Theme and motion' },
   { id: 'tasks', label: 'Task defaults', icon: <SlidersHorizontal size={20} />, hint: 'Priority, reminders, quick add' },
+  { id: 'productivity', label: 'Productivity', icon: <Target size={20} />, hint: 'Karma, daily and weekly goals, days off, vacation' },
   { id: 'datetime', label: 'Date & time', icon: <Clock size={20} />, hint: 'Time zone, week start, clock' },
-  { id: 'notifications', label: 'Notifications', icon: <Bell size={20} />, hint: 'Push and in-app reminders' },
+  { id: 'reminders', label: 'Reminders', icon: <AlarmClock size={20} />, hint: 'Snooze, automatic reminders, channel' },
+  { id: 'notifications', label: 'Notifications', icon: <Bell size={20} />, hint: 'Push, morning overview, evening review' },
+  { id: 'integrations', label: 'Siri & Apple Watch', icon: <Mic size={20} />, hint: 'Add tasks by voice with Shortcuts' },
   { id: 'accounts', label: 'Connected accounts', icon: <CalendarDays size={20} />, hint: 'Google and Microsoft calendars (read-only)' },
   { id: 'diagnostics', label: 'Sync diagnostics', icon: <Stethoscope size={20} />, hint: 'Calendar sync health' },
   { id: 'data', label: 'Import & export', icon: <Database size={20} />, hint: 'JSON, CSV, Todoist' },
   { id: 'backup', label: 'Backups', icon: <Archive size={20} />, hint: 'Create and download backups' },
   { id: 'security', label: 'Security', icon: <ShieldCheck size={20} />, hint: 'Password and sessions' },
+  { id: 'whatsnew', label: "What's new", icon: <Sparkles size={20} />, hint: 'Recent changes' },
+  { id: 'help', label: 'Help & feedback', icon: <LifeBuoy size={20} />, hint: 'Quick add syntax, gestures, troubleshooting' },
   { id: 'about', label: 'About', icon: <Info size={20} />, hint: 'Version and build' },
 ];
 
@@ -50,10 +57,16 @@ export function SettingsPage() {
       <PageHeader title={current.label} back="/settings" />
       <div className="max-w-xl space-y-5">
         {section === 'profile' && <Profile />}
+        {section === 'general' && <General />}
         {section === 'appearance' && <Appearance />}
         {section === 'tasks' && <TaskDefaults />}
+        {section === 'productivity' && <Productivity />}
         {section === 'datetime' && <DateTime />}
+        {section === 'reminders' && <Reminders />}
         {section === 'notifications' && <Notifications />}
+        {section === 'integrations' && <Integrations />}
+        {section === 'whatsnew' && <WhatsNew />}
+        {section === 'help' && <Help />}
         {section === 'accounts' && <Accounts />}
         {section === 'diagnostics' && <Diagnostics />}
         {section === 'data' && <ImportExport />}
@@ -62,15 +75,6 @@ export function SettingsPage() {
         {section === 'about' && <About />}
       </div>
     </>
-  );
-}
-
-function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-line/60 py-3">
-      <div><p className="text-sm">{label}</p>{hint && <p className="text-xs text-muted">{hint}</p>}</div>
-      {children}
-    </div>
   );
 }
 
@@ -148,7 +152,7 @@ function Notifications() {
   const prefs = useStore((s) => s.prefs);
   const qc = useQueryClient();
   const cfg = useQuery<{ configured: boolean; publicKey: string | null; subscriptions: number }>({ queryKey: ['push-config'], queryFn: () => api('GET', '/push/config') });
-  const list = useQuery<{ unread: number; items: { id: string; title: string; body: string; createdAt: string; readAt: string | null }[] }>({ queryKey: ['notifications'], queryFn: () => api('GET', '/notifications') });
+  const list = useQuery<{ unread: number; items: { id: string; kind: string; title: string; body: string; createdAt: string; readAt: string | null }[] }>({ queryKey: ['notifications'], queryFn: () => api('GET', '/notifications') });
   const supported = typeof Notification !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
   const [perm, setPerm] = useState(() => (typeof Notification !== 'undefined' ? Notification.permission : 'denied'));
   const [subscribed, setSubscribed] = useState(false);
@@ -200,10 +204,11 @@ function Notifications() {
         <p className="mt-2 text-xs text-muted">{cfg.data?.subscriptions ?? 0} device(s) registered.</p>
       </section>
       <Row label="Late reminder grace" hint="Skip reminders older than this after downtime (minutes)."><Input aria-label="Late grace minutes" type="number" min={0} max={1440} className="w-24" value={Number(prefs['notifications.lateGraceMinutes'])} onChange={(e) => { const n = Number(e.target.value); if (n >= 0 && n <= 1440) void actions.setPref('notifications.lateGraceMinutes', n); }} /></Row>
+      <Digests />
       <section aria-label="Recent notifications">
         <div className="flex items-center justify-between"><h2 className="text-sm font-semibold">Recent</h2>{(list.data?.unread ?? 0) > 0 && <Button size="sm" variant="ghost" onClick={async () => { await api('POST', '/notifications/read', { id: null }); void list.refetch(); }}>Mark all read</Button>}</div>
         {list.isLoading ? <Spinner /> : !list.data?.items.length ? <p className="py-3 text-sm text-muted">Nothing yet.</p> : (
-          <ul>{list.data.items.map((n) => <li key={n.id} className={clsx('border-b border-line/60 py-2 text-sm', !n.readAt && 'font-medium')}>{n.title}<span className="block text-xs font-normal text-muted">{n.body}</span></li>)}</ul>
+          <ul>{list.data.items.map((n) => <li key={n.id} className={clsx('flex items-center gap-3 border-b border-line/60 py-2 text-sm', !n.readAt && 'font-medium')}><span className="min-w-0 flex-1">{n.title}<span className="block text-xs font-normal text-muted">{n.body}</span></span>{n.kind === 'reminder' && <Button size="sm" variant="ghost" aria-label={`Snooze ${n.title}`} onClick={async () => { const m = Number(prefs['reminders.snoozeMinutes'] ?? 15); try { await api('POST', `/notifications/${n.id}/snooze`, { minutes: m }); toast(`Snoozed for ${m} minutes`, 'success'); void list.refetch(); } catch (x) { toast(errorMessage(x), 'error'); } }}>Snooze</Button>}</li>)}</ul>
         )}
       </section>
     </>

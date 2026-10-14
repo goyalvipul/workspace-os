@@ -10,7 +10,7 @@ import { backupFilePath, listBackups, runBackup } from '../services/backup.js';
 import {
   applyImportPlan, buildImportPlan, exportTasksCsv, exportWorkspace, importWorkspaceJson, planSummary, signImportToken, verifyImportToken,
 } from '../services/dataio.js';
-import { countPushSubscriptions, listNotifications, markRead, pushConfigured, removePushSubscription, savePushSubscription } from '../services/notifications.js';
+import { countPushSubscriptions, listNotifications, markRead, pushConfigured, removePushSubscription, savePushSubscription, snoozeNotification } from '../services/notifications.js';
 import { nowIso, sha256 } from '../util.js';
 import { transact } from '../services/tx.js';
 import type { Api } from './kit.js';
@@ -97,6 +97,16 @@ export function registerOps(api: Api, ctx: AppContext) {
     },
   });
   api({ method: 'POST', url: '/notifications/read', summary: 'Mark one (or all) notifications read', tag: 'notifications', body: z.object({ id: ulid.nullable().default(null) }), handler: (c) => { markRead(ctx, c.user.id, c.body.id); return { ok: true }; } });
+
+  api({
+    method: 'POST', url: '/notifications/:id/snooze', summary: 'Snooze a reminder (re-delivers after N minutes)', tag: 'notifications',
+    body: z.object({ minutes: z.number().int().min(1).max(1440) }),
+    handler: (c) => {
+      const id = ulid.safeParse(c.params.id);
+      if (!id.success || !snoozeNotification(ctx, c.user.id, id.data, c.body.minutes)) throw new AppError(404, 'NOT_FOUND', 'Notification not found');
+      return { ok: true };
+    },
+  });
 
   api({
     method: 'GET', url: '/push/config', summary: 'Web-push availability + VAPID public key', tag: 'notifications',

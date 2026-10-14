@@ -74,6 +74,13 @@ describe('quick add parser', () => {
     expect(r.dueDate).toBeNull();
     expect(r.priority).toBeNull();
   });
+  it('"next week" and "weekend" follow the user settings (2026-10-14 is a Wednesday)', () => {
+    expect(parseQuickAdd('plan next week', ctx).dueDate).toBe('2026-10-19'); // Monday by default
+    expect(parseQuickAdd('plan next week', { ...ctx, nextWeekStart: 0 }).dueDate).toBe('2026-10-18'); // Sunday
+    expect(parseQuickAdd('hike this weekend', ctx).dueDate).toBe('2026-10-17'); // Saturday by default
+    expect(parseQuickAdd('hike weekend', { ...ctx, weekendDay: 0 }).dueDate).toBe('2026-10-18'); // Sunday
+    expect(parseQuickAdd('hike weekend', { ...ctx, today: '2026-10-17' }).dueDate).toBe('2026-10-17'); // already Saturday
+  });
 });
 
 describe('recurrence', () => {

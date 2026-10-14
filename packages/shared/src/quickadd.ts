@@ -20,6 +20,10 @@ export interface QuickAddContext {
   today: string;
   projects: { id: string; name: string }[];
   labels: { id: string; name: string }[];
+  /** Weekday (0=Sun..6=Sat) that "next week" resolves to. Default Monday. */
+  nextWeekStart?: number;
+  /** Weekday that "weekend" resolves to. Default Saturday. */
+  weekendDay?: number;
 }
 
 export interface QuickAddResult {
@@ -175,7 +179,8 @@ export function parseQuickAdd(input: string, ctx: QuickAddContext): QuickAddResu
     const tries: [RegExp, (m: RegExpExecArray) => string | null][] = [
       [new RegExp(`${B}(today)${A}`, 'i'), () => today],
       [new RegExp(`${B}(tomorrow|tmrw)${A}`, 'i'), () => addDays(today, 1)],
-      [new RegExp(`${B}(next\\s+week)${A}`, 'i'), () => addDays(startOfWeek(today, 1), 7)],
+      [new RegExp(`${B}(next\\s+week)${A}`, 'i'), () => (ctx.nextWeekStart === undefined || ctx.nextWeekStart === 1 ? addDays(startOfWeek(today, 1), 7) : nextWeekday(today, ctx.nextWeekStart))],
+      [new RegExp(`${B}((?:this\\s+)?weekend)${A}`, 'i'), () => addDays(today, (((ctx.weekendDay ?? 6) - weekdayOf(today) + 7) % 7))],
       [new RegExp(`${B}(in\\s+(\\d{1,3})\\s+(day|week)s?)${A}`, 'i'), (m) => addDays(today, Number(m[3]) * ((m[4] as string).toLowerCase() === 'week' ? 7 : 1))],
       [new RegExp(`${B}(next\\s+(${dayList}))${A}`, 'i'), (m) => nextWeekday(today, WEEKDAYS.indexOf((m[3] as string).toLowerCase()), true)],
       [new RegExp(`${B}(${dayList})${A}`, 'i'), (m) => nextWeekday(today, WEEKDAYS.indexOf((m[2] as string).toLowerCase()))],

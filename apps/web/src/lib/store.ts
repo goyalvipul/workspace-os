@@ -21,6 +21,7 @@ import {
 } from '@wos/shared';
 import { api, ApiError, errorMessage, NetworkError, setCsrf } from './api';
 import { db, kvGet, kvSet, wipeLocal, type EntityType, type OutboxRow } from './db';
+import { playTone } from './sound';
 
 export interface Conflict {
   id: string;
@@ -60,7 +61,7 @@ export interface State {
   toasts: Toast[];
   sessionExpired: boolean;
   quickAddOpen: boolean;
-  quickAddDefaults: { projectId?: string | null; sectionId?: string | null; date?: string | null } | null;
+  quickAddDefaults: { projectId?: string | null; sectionId?: string | null; date?: string | null; text?: string } | null;
   openTaskId: string | null;
 }
 
@@ -197,7 +198,7 @@ function applySnapshot(snap: SnapshotResponse): void {
         if (local) tasks[t.id] = { ...local, version: Math.max(local.version, t.version) };
         continue;
       }
-      if (t.deletedAt) delete tasks[t.id];
+      if (t.deletedAt || t.status === 'archived') delete tasks[t.id];
       else tasks[t.id] = t;
     }
   }
@@ -437,7 +438,12 @@ function applyResponse(row: OutboxRow, data: any): void {
     void refresh();
     return;
   }
-  if (data.task && row.kind !== 'task.delete') mergeFromServer('tasks', data.task as TaskDTO, 'task');
+  if (data.task && row.kind !== 'task.delete' && row.kind !== 'task.archive') mergeFromServer('tasks', data.task as TaskDTO, 'task');
+  if (row.kind === 'task.complete') {
+    // recurring task + "reset sub-tasks": the server reopened the finished sub-tasks, pull them in
+    if ((data.task as TaskDTO | undefined)?.recurrence && get().prefs['tasks.resetSubtasks']) void refresh();
+    void checkGoals();
+  }
   if (data.project) mergeFromServer('projects', data.project as ProjectDTO, 'project');
   if (data.section) mergeFromServer('sections', data.section as SectionDTO, 'section');
   if (data.label) mergeFromServer('labels', data.label as LabelDTO, 'label');
@@ -481,6 +487,40 @@ export function resolveConflict(id: string, choice: 'mine' | 'theirs'): void {
   if (!c) return;
   set((s) => ({ conflicts: s.conflicts.filter((x) => x.id !== id) }));
   if (choice === 'mine') actions.updateTask(c.taskId, c.patch as Partial<TaskPatch>);
+}
+
+// ---------------------------------------------------------------- goals
+/** After a completion lands on the server: celebrate when the daily/weekly goal is first reached (once per day/week). */
+async function checkGoals(): Promise<void> {
+  const s = get();
+  const p = s.prefs;
+  if (!s.user || !p['productivity.karma'] || !p['productivity.celebrations'] || p['productivity.vacation']) return;
+  const tz = s.user.timezone;
+  const today = todayLocal(tz);
+  const dow = new Date(`${today}T12:00:00Z`).getUTCDay();
+  if ((p['productivity.daysOff'] as number[]).includes(dow)) return;
+  const weekStart = s.user.weekStartsOn;
+  const back = (dow - weekStart + 7) % 7;
+  const from = new Date(new Date(`${today}T12:00:00Z`).getTime() - back * 86_400_000).toISOString().slice(0, 10);
+  try {
+    const r = await api<{ days: { date: string; completed: number }[] }>('GET', `/reports/summary?from=${from}&to=${today}`);
+    const day = r.days.find((d) => d.date === today)?.completed ?? 0;
+    const week = r.days.reduce((a, d) => a + d.completed, 0);
+    const seen = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
+    const mark = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
+    if (week >= (p['productivity.weeklyGoal'] as number) && seen('wos.weekGoal') !== from) {
+      mark('wos.weekGoal', from);
+      mark('wos.dayGoal', today);
+      playTone('ding');
+      toast(`Weekly goal reached: ${week} tasks this week!`, 'success');
+    } else if (day >= (p['productivity.dailyGoal'] as number) && seen('wos.dayGoal') !== today) {
+      mark('wos.dayGoal', today);
+      playTone('ding');
+      toast(`Daily goal reached: ${day} tasks done today!`, 'success');
+    }
+  } catch {
+    /* offline: skip */
+  }
 }
 
 // ---------------------------------------------------------------- preferences
@@ -664,7 +704,36 @@ export const actions = {
     setTask(completeLocal(t));
     if (opts.completeSubtasks) for (const d of descendantsOfTask(id)) if (d.status === 'open') setTask(completeLocal(d));
     enqueue({ kind: 'task.complete', method: 'POST', url: `/tasks/${id}/complete`, body: { completeSubtasks: opts.completeSubtasks || undefined }, needsVersion: true, entity: { type: 'task', id } });
+    playTone(get().prefs['sound.completeTone'] as string);
     toast(`Completed "${t.title.slice(0, 40)}"`, 'success', { label: 'Undo', run: () => actions.reopenTask(id) });
+  },
+
+  /** Hides a task (and its subtasks) from every view without deleting it. Restorable from Archived. */
+  archiveTask(id: string): void {
+    const t = get().tasks[id];
+    if (!t) return;
+    const subs = descendantsOfTask(id);
+    set((s) => {
+      const tasks = { ...s.tasks };
+      delete tasks[id];
+      for (const d of subs) delete tasks[d.id];
+      return { tasks };
+    });
+    enqueue({ kind: 'task.archive', method: 'POST', url: `/tasks/${id}/archive`, body: {}, entity: { type: 'task', id } });
+    toast(`Archived "${t.title.slice(0, 40)}"`, 'info', {
+      label: 'Undo',
+      run: () => {
+        setTask(t);
+        for (const d of subs) setTask(d);
+        enqueue({ kind: 'task.unarchive', method: 'POST', url: `/tasks/${id}/unarchive`, body: {}, entity: { type: 'task', id } });
+      },
+    });
+  },
+
+  unarchiveTask(id: string): void {
+    enqueue({ kind: 'task.unarchive', method: 'POST', url: `/tasks/${id}/unarchive`, body: {}, entity: { type: 'task', id } });
+    toast('Restored from archive', 'success');
+    setTimeout(() => void refresh(), 600);
   },
 
   reopenTask(id: string): void {

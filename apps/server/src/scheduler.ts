@@ -7,7 +7,7 @@ import { pruneJobs, scheduleTick, workerTick } from './calendar/service.js';
 import { pruneSessions } from './services/auth.js';
 import { runBackup } from './services/backup.js';
 import { pruneEvents } from './services/events.js';
-import { pruneNotifications, reminderTick } from './services/notifications.js';
+import { digestTick, pruneNotifications, reminderTick, snoozeTick } from './services/notifications.js';
 import { nowIso } from './util.js';
 
 /** Single-process lease so a (mistaken) second container cannot run the same periodic job concurrently. */
@@ -73,6 +73,8 @@ export function startScheduler(ctx: AppContext): Scheduler {
   });
   const reminders = guard('reminders', async () => {
     await reminderTick(ctx);
+    await snoozeTick(ctx);
+    await digestTick(ctx);
   });
   const backup = guard('daily-backup', async () => {
     const last = ctx.db.select().from(schema.backups).where(eq(schema.backups.status, 'ok')).orderBy(desc(schema.backups.startedAt)).limit(1).get();

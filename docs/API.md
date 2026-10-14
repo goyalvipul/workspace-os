@@ -23,3 +23,5 @@ Base: `/api/v1`. JSON. The generated OpenAPI document is at `GET /api/v1/openapi
 | Notifications | `/notifications`, `/push/config`, `/push/subscribe`, `/push/unsubscribe`, `/push/test` |
 
 Pagination uses cursors (`limit`, `cursor`); list responses are `{ items, nextCursor? }`.
+
+**Integrations (Siri, Shortcuts, Apple Watch).** `GET/POST /api-tokens`, `DELETE /api-tokens/:id` (browser session only), and `POST /capture`, `GET /capture/today` which also accept `Authorization: Bearer wos_...` (a personal access token). Bearer tokens are accepted on those two paths only; add `?format=text` for a plain-text reply. Other new endpoints: `POST /tasks/:id/archive`, `POST /tasks/:id/unarchive`, `POST /notifications/:id/snooze`.

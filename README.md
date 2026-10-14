@@ -6,6 +6,14 @@ A self-hosted, single-owner task manager (Todoist-style) with a unified, read-on
 - **It is a PWA (Progressive Web App):** there is nothing to download from an app store. Open it in a browser over HTTPS and install it to your phone's home screen or your desktop; it then runs full-screen like a native app, caches itself for offline use, queues changes made offline, and can show reminder notifications. See [Install it as an app](#step-4b-install-it-as-an-app-pwa).
 - **Your data stays with you:** one SQLite file plus backups. Calendar providers are read-only; nothing is ever written back to Google or Microsoft.
 
+### Highlights
+
+- **Hey Siri, add task.** Add tasks by voice on iPhone, iPad, Mac and **Apple Watch** with Apple Shortcuts. What you say goes through the same smart parser as Quick Add ("Call mom tomorrow 5pm p2 #Family"). See [Siri and Apple Watch](#siri-and-apple-watch).
+- **Swipe gestures.** Swipe a task **right to delete** and **left to archive**, both with Undo. Pick different actions (complete, move to tomorrow, none) in Settings → General. See [Swipe gestures and Archive](#swipe-gestures-and-archive).
+- **Productivity.** Daily and weekly goals, goal streaks, karma levels, days off, vacation mode and goal celebrations.
+- **Smarter reminders.** Automatic reminders on new tasks, snooze with your own duration, choose push / in-app / both, plus an optional morning overview and evening review.
+- **Make it yours.** Home view, "detect dates in task names" on/off, what "next week" and "weekend" mean, reset sub-tasks when a repeating task completes, and a task-complete sound. See [Settings reference](#settings-reference).
+
 ---
 
 ## Set it up on your own server (from scratch)
@@ -183,6 +191,66 @@ If it still opens with browser bars: delete the icon and add it again from Safar
 - Add a **Cache Rule** that bypasses the cache for `/`, `/sw.js` and `/manifest.webmanifest`, and purge the cache after changing it.
 - Turn off **Rocket Loader** and **Web Analytics auto-injection** for the hostname. (The app already opts out of Rocket Loader and sends `no-cache, no-transform` on these files, but the dashboard settings win.)
 - In Nginx Proxy Manager keep **Cache Assets** off.
+
+### Siri and Apple Watch
+
+You can add tasks by voice, from an iPhone, iPad, Mac or **Apple Watch**, using the built-in Apple **Shortcuts** app. No extra app is needed. The shortcut sends your words to your own server, which understands them exactly like Quick Add: dates, times, repeats, `p1` to `p4`, `#Project` and `@label`.
+
+> **Honest scope:** a web app cannot register native Siri intents or ship a native Apple Watch app (that needs Xcode and an Apple developer account). Shortcuts is Apple's supported way to do the same thing, and it works with "Hey Siri" and on the Watch.
+
+**Set up (about 3 minutes)**
+1. Open **Settings → Siri & Apple Watch** in Workspace OS and tap **Create token**. Copy the token; it is shown **once**. (It can only add tasks and read today's list. You can revoke it any time, and make one per device.)
+2. On your iPhone open **Shortcuts**, tap **+**, and name it **Add task** (the name is what you say to Siri).
+3. Add these actions in order:
+   - **Dictate Text** (or **Ask for Input** if you prefer typing).
+   - **Get Contents of URL**: URL `https://YOUR-ADDRESS/api/v1/capture`, Method `POST`, Header `Authorization` = `Bearer YOUR_TOKEN`, Request Body `JSON` with a **Text** field named `text` set to the **Dictated Text** variable.
+   - **Get Dictionary Value** for key `message`, then **Speak Text**.
+4. Say **"Hey Siri, Add task"** and then the task, for example "Pay the electricity bill tomorrow at 9am priority 1". Siri answers with what it added.
+
+The same page in the app shows these steps with your exact address filled in, and a **Try it** box to test without a phone.
+
+**Apple Watch**
+- Shortcuts made on the iPhone appear on the Watch. In the shortcut's details (the **(i)** button) turn on **Show on Apple Watch**.
+- Raise your wrist and say **"Hey Siri, Add task"**, or open **Shortcuts** on the Watch. You can also add the Shortcuts complication to a watch face, or map the shortcut to the **Action Button** on Apple Watch Ultra.
+- The Watch calls your server directly over Wi-Fi or cellular, so use an address that works outside your home network (your public HTTPS name). A Tailscale-only address will not work from the Watch.
+
+**Optional extras**
+- **"What's on today?"** shortcut: **Get Contents of URL** with `https://YOUR-ADDRESS/api/v1/capture/today?format=text` (GET, same header), then **Speak Text**.
+- **Open Quick Add pre-filled:** a shortcut that opens `https://YOUR-ADDRESS/?add=Buy%20milk%20tomorrow`. The installed app also has an **Add task** long-press shortcut on Android and desktop.
+- Add `?format=text` to `/capture` to get a plain-text reply instead of JSON.
+
+**Security.** Tokens are random, stored only as a hash, scoped to the two `capture` endpoints (they cannot read your tasks list, export data or create other tokens), rate limited, revocable, and never logged. Create and revoke events appear in Activity.
+
+### Swipe gestures and Archive
+
+On a touch screen, swipe a task row sideways:
+
+| Gesture | Default | Notes |
+| --- | --- | --- |
+| Swipe **right** | **Delete** | Soft delete with an **Undo** toast |
+| Swipe **left** | **Archive** | Hides the task from every view; **Undo** toast; find it under **Browse → Archived tasks** and restore it any time |
+
+Change either gesture to **Complete**, **Move to tomorrow** or **Nothing** in **Settings → General → Swipe actions**. Vertical scrolling is not affected; the row only moves once the gesture is clearly horizontal. You can also archive from a task's **⋯** menu.
+
+### Settings reference
+
+Settings are saved to your account, so every device follows them.
+
+| Section | What you can set |
+| --- | --- |
+| **Account** | Display name, email (username is fixed). Password and sessions are under **Security**. |
+| **General** | Home view (Today, Inbox, Upcoming, Calendar, Browse); detect dates in task names; reset sub-tasks when a repeating task completes; what "next week" and "weekend" mean; task-complete sound; swipe actions; sync status and **Sync now**. |
+| **Productivity** | Use Karma; daily goal; weekly goal; goal celebrations; days off; vacation mode. Progress is on **Activity → Goals & karma**. |
+| **Reminders** | Remind me via (push, in-app, both); automatic reminders for tasks with a due time; snooze duration; default reminder time. |
+| **Notifications** | Push on this device; **morning overview** and **evening review** at times you choose; recent notifications with a **Snooze** button on reminders. |
+| **Siri & Apple Watch** | Access tokens and step-by-step Shortcuts setup (above). |
+| **What's new / Help & feedback** | Recent changes, Quick Add cheat sheet, gestures and troubleshooting. |
+
+How some of them behave:
+- **Karma:** 1 point per completed task plus 10 for each day you reach your daily goal, over the last 90 days. Days off never break a streak, and vacation mode pauses goals, celebrations and digests.
+- **Automatic reminders:** off by default. When on, a task you add with a due *time* gets a reminder at that offset (at the time, 10, 30 or 60 minutes before).
+- **Snooze:** re-delivers the reminder after your chosen duration.
+- **Not included:** things that only make sense for Todoist's hosted service or multiple users (subscription, shared-project invites, app icon choice) and two-factor sign-in / account deletion. Deleting your data is done by removing the SQLite file. Two-factor sign-in is not implemented yet; the login is protected by a strong-password rule, rate limiting and HTTPS-only cookies.
 
 ### Step 5. Connect calendars (optional)
 

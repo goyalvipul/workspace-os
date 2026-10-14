@@ -32,7 +32,7 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
   const projects = useStore((s) => s.projects);
   const labels = useStore((s) => s.labels);
   const prefs = useStore((s) => s.prefs);
-  const [text, setText] = useState('');
+  const [text, setText] = useState(defaults?.text ?? '');
   const [desc, setDesc] = useState('');
   const [ignored, setIgnored] = useState<string[]>([]);
   const [manualDate, setManualDate] = useState<DateValue | null>(defaults?.date ? { date: defaults.date, time: null } : null);
@@ -50,10 +50,19 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
   }, []);
 
   const parsed = useMemo(
-    () => parseQuickAdd(text, { today, projects: Object.values(projects).filter((p) => !p.archivedAt).map((p) => ({ id: p.id, name: p.name })), labels: Object.values(labels).map((l) => ({ id: l.id, name: l.name })) }),
-    [text, today, projects, labels],
+    () =>
+      parseQuickAdd(text, {
+        today,
+        projects: Object.values(projects).filter((p) => !p.archivedAt).map((p) => ({ id: p.id, name: p.name })),
+        labels: Object.values(labels).map((l) => ({ id: l.id, name: l.name })),
+        nextWeekStart: Number(prefs['dates.nextWeekStart'] ?? 1),
+        weekendDay: Number(prefs['dates.weekendDay'] ?? 6),
+      }),
+    [text, today, projects, labels, prefs],
   );
-  const tokens = parsed.tokens.filter((t) => !ignored.includes(`${t.kind}:${t.text}`));
+  // Settings → General → "Detect dates in task names" off: dates, times and repeats typed in the name stay as plain text.
+  const detect = prefs['dates.detect'] !== false;
+  const tokens = parsed.tokens.filter((t) => (detect || !['date', 'time', 'recurrence'].includes(t.kind)) && !ignored.includes(`${t.kind}:${t.text}`));
   const has = (k: QuickAddToken['kind']) => tokens.some((t) => t.kind === k);
 
   const date: DateValue = manualDate ?? { date: has('date') || has('recurrence') ? parsed.dueDate : null, time: has('time') ? parsed.dueTime : null };
@@ -86,7 +95,7 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
       dueAtUtc: due?.dueAtUtc ?? null,
       dueTimezone: due?.dueTimezone ?? null,
       recurrence: recurrence && due ? recurrence : null,
-      reminders,
+      reminders: reminders.length || !due?.dueAtUtc || prefs['reminders.auto'] === 'none' ? reminders : [{ kind: 'relative', offsetMinutes: Number(prefs['reminders.auto']), channel: prefs['reminders.via'] === 'inapp' ? 'inapp' : 'webpush', enabled: true }],
     });
     const where = project.p ? (projects[project.p]?.name ?? 'project') : 'Inbox';
     toast(`Added to ${where}`, 'success');

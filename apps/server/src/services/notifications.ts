@@ -1,11 +1,12 @@
 import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
 import webpush from 'web-push';
-import { localDateOf, localToUtc, newId, todayLocal } from '@wos/shared';
+import { localDateOf, localTimeOf, localToUtc, newId, todayLocal } from '@wos/shared';
 import type { AppContext } from '../context.js';
 import { schema } from '../db/client.js';
 import { decryptString, encryptString } from '../security/crypto.js';
 import { nowIso, sha256 } from '../util.js';
 import { emitEvent } from './events.js';
+import { viewToday } from './queries.js';
 import { getPreferences } from './workspace.js';
 
 let vapidReady: string | null = null;
@@ -162,6 +163,75 @@ export async function reminderTick(ctx: AppContext, now: Date = new Date()): Pro
   }
   for (const p of pushes) await sendPush(ctx, p.owner, { title: p.title, body: p.body, url: '/today', tag: p.tag });
   return out;
+}
+
+// ---------- morning overview / evening review ----------
+const toMinutes = (hhmm: string): number => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+};
+
+/** Sends the optional daily digests once per local day, at or shortly after the chosen time (never as a late backlog). */
+export async function digestTick(ctx: AppContext, now: Date = new Date()): Promise<number> {
+  let made = 0;
+  const pushes: { owner: string; title: string; body: string; tag: string }[] = [];
+  for (const u of ctx.db.select().from(schema.users).all()) {
+    if (u.disabledAt) continue;
+    const prefs = getPreferences(ctx.db, u.id);
+    if (prefs['productivity.vacation']) continue;
+    const today = todayLocal(u.timezone, now);
+    const nowMin = toMinutes(localTimeOf(now, u.timezone));
+    for (const kind of ['morning', 'evening'] as const) {
+      if (!prefs[`notifications.${kind}Enabled`]) continue;
+      const at = toMinutes(String(prefs[`notifications.${kind}Time`] ?? (kind === 'morning' ? '08:00' : '18:00')));
+      if (nowMin < at || nowMin - at > 180) continue;
+      const dedupeKey = `digest:${u.id}:${kind}:${today}`;
+      if (ctx.db.select({ id: schema.notifications.id }).from(schema.notifications).where(and(eq(schema.notifications.ownerUserId, u.id), eq(schema.notifications.dedupeKey, dedupeKey))).get()) continue;
+      const v = viewToday(ctx, u, today);
+      const open = v.dueToday.length + v.overdue.length;
+      const done = v.completedToday.length;
+      const title = kind === 'morning' ? 'Good morning: your day ahead' : 'Evening review';
+      const body =
+        kind === 'morning'
+          ? open ? `${open} task${open === 1 ? '' : 's'} on your plate today${v.overdue.length ? `, ${v.overdue.length} overdue` : ''}.` : 'Nothing is due today.'
+          : `${done} completed today. ${open ? `${open} still open: reschedule or finish them.` : 'Everything due today is done.'}`;
+      const stamp = now.toISOString();
+      const ins = ctx.db.insert(schema.notifications).values({ id: newId(), ownerUserId: u.id, kind: 'digest', title, body, scheduledAt: stamp, deliveredAt: stamp, channel: 'inapp', status: 'delivered', dedupeKey, createdAt: stamp }).onConflictDoNothing().run();
+      if (ins.changes === 0) continue;
+      made++;
+      emitEvent(ctx, u.id, 'notification', null, { kind: 'digest' });
+      if (prefs['reminders.via'] !== 'inapp') pushes.push({ owner: u.id, title, body, tag: dedupeKey });
+    }
+  }
+  for (const p of pushes) await sendPush(ctx, p.owner, { title: p.title, body: p.body, url: '/today', tag: p.tag });
+  return made;
+}
+
+/** Snooze: re-deliver a notification's reminder after N minutes (inserted as a new pending reminder notification). */
+export function snoozeNotification(ctx: AppContext, ownerId: string, id: string, minutes: number): boolean {
+  const N = schema.notifications;
+  const n = ctx.db.select().from(N).where(and(eq(N.id, id), eq(N.ownerUserId, ownerId))).get();
+  if (!n) return false;
+  const at = new Date(Date.now() + minutes * 60_000).toISOString();
+  ctx.db.update(N).set({ readAt: n.readAt ?? nowIso() }).where(eq(N.id, id)).run();
+  ctx.db.insert(N).values({ id: newId(), ownerUserId: ownerId, kind: n.kind, taskId: n.taskId, title: n.title, body: n.body, scheduledAt: at, channel: n.channel, status: 'pending', dedupeKey: `snooze:${id}:${at}`, createdAt: nowIso() }).onConflictDoNothing().run();
+  emitEvent(ctx, ownerId, 'notification', n.taskId, { snoozed: true });
+  return true;
+}
+
+/** Delivers snoozed notifications whose time has come. */
+export async function snoozeTick(ctx: AppContext, now: Date = new Date()): Promise<number> {
+  const N = schema.notifications;
+  const due = ctx.db.select().from(N).where(and(eq(N.status, 'pending'), lt(N.scheduledAt, new Date(now.getTime() + 1).toISOString()))).all();
+  const pushes: { owner: string; title: string; body: string; tag: string }[] = [];
+  for (const n of due) {
+    const stamp = now.toISOString();
+    ctx.db.update(N).set({ status: 'delivered', deliveredAt: stamp }).where(eq(N.id, n.id)).run();
+    emitEvent(ctx, n.ownerUserId, 'notification', n.taskId, { kind: n.kind });
+    if (n.channel === 'webpush') pushes.push({ owner: n.ownerUserId, title: n.title, body: n.body || 'Reminder', tag: n.dedupeKey });
+  }
+  for (const p of pushes) await sendPush(ctx, p.owner, { title: p.title, body: p.body, url: '/today', tag: p.tag });
+  return due.length;
 }
 
 export function listNotifications(ctx: AppContext, ownerId: string, limit = 50) {

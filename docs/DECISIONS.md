@@ -16,3 +16,6 @@
 | 12 | Defaults: America/Vancouver, dark theme, coral accent (`#c93b33`, darkened for AA contrast) | Owner's answers |
 | 13 | Calendar providers tested with fakes | No credentials available at build time |
 | 14 | Test suites run once at the end | Owner's request to save time |
+| 15 | Siri / Apple Watch via Apple Shortcuts + personal access tokens limited to `/api/v1/capture*` (hash-only storage, no CSRF because no cookie, Origin check kept) | A PWA cannot host native Siri intents or a watch app; a narrowly scoped bearer token keeps a leaked shortcut from reading or exporting data |
+| 16 | `archived` task status (hidden from every view, restorable) separate from soft delete | Swipe-left archive needs a reversible state that is not Trash |
+| 17 | Goals / karma computed on read from `task_completions` (no stored score) | Recurring completions count, undo stays consistent, nothing to migrate |

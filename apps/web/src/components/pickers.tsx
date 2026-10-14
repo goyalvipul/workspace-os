@@ -92,8 +92,11 @@ export function DatePicker({ value, onChange, label = 'Date', allowTime = true, 
   const set = (v: DateValue) => {
     onChange(v);
   };
-  const nextMonday = addDays(today, ((8 - weekdayOf(today)) % 7) || 7);
-  const weekend = addDays(today, (6 - weekdayOf(today) + 7) % 7 || 7);
+  // Settings → General: which weekday "Next week" and "This weekend" mean.
+  const nextWeekDay = useStore((s) => Number(s.prefs['dates.nextWeekStart'] ?? 1));
+  const weekendDay = useStore((s) => Number(s.prefs['dates.weekendDay'] ?? 6));
+  const nextMonday = addDays(today, ((nextWeekDay + 7 - weekdayOf(today)) % 7) || 7);
+  const weekend = addDays(today, (weekendDay + 7 - weekdayOf(today)) % 7);
   const quick: { label: string; date: string; icon: ReactNode }[] = [
     { label: 'Today', date: today, icon: <CalendarDays size={16} className="text-ok" /> },
     { label: 'Tomorrow', date: addDays(today, 1), icon: <Sun size={16} className="text-warn" /> },

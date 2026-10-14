@@ -10,6 +10,8 @@ import type { Env } from './config/env.js';
 import type { AppContext } from './context.js';
 import { AppError } from './errors.js';
 import { SESSION_COOKIE, csrfTokenFor, lookupSession } from './services/auth.js';
+import { lookupApiToken } from './services/apitokens.js';
+import { registerIntegrations } from './routes/integrations.js';
 import { and, eq } from 'drizzle-orm';
 import { schema } from './db/client.js';
 import { nowIso, safeEqual, sha256 } from './util.js';
@@ -81,10 +83,22 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
       req.auth = found;
       if (!found) reply.clearCookie(SESSION_COOKIE, { path: '/' });
     }
+    // Personal access tokens (Siri / Shortcuts / Apple Watch) are honoured ONLY on the capture endpoints, and only when there is no browser session.
+    let viaToken = false;
+    if (!req.auth && url.startsWith('/api/v1/capture')) {
+      const m = /^Bearer\s+(\S+)$/i.exec(String(req.headers.authorization ?? ''));
+      if (m) {
+        const found = lookupApiToken(ctx, m[1] as string);
+        if (found) {
+          req.auth = { user: found.user, session: found.session };
+          viaToken = true;
+        }
+      }
+    }
     if (isUnsafe(req.method)) {
       const origin = req.headers.origin;
       if (origin && !env.trustedOrigins.includes(origin)) throw new AppError(403, 'ORIGIN_NOT_ALLOWED', 'Cross-origin request blocked');
-      if (req.auth) {
+      if (req.auth && !viaToken) {
         const sent = req.headers['x-csrf-token'];
         const expected = csrfTokenFor(ctx, req.auth.session.id);
         if (typeof sent !== 'string' || !safeEqual(sent, expected)) throw new AppError(403, 'CSRF_INVALID', 'Missing or invalid CSRF token. Reload the page and try again.');
@@ -137,6 +151,7 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
   registerWorkspace(api, ctx);
   registerCalendar(api, ctx);
   registerOps(api, ctx);
+  registerIntegrations(api, ctx);
 
   // ---------- static SPA ----------
   const dist = env.WEB_DIST_DIR ? resolve(env.WEB_DIST_DIR) : resolve(process.cwd(), 'apps/web/dist');

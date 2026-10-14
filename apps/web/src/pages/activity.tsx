@@ -7,6 +7,7 @@ import { Button, EmptyState, Segmented, Select, Spinner } from '../components/ui
 import { api } from '../lib/api';
 import { dayHeading } from '../lib/format';
 import { useHour12, useToday, useTz } from '../lib/hooks';
+import { computeProductivity } from '../lib/productivity';
 import { useStore } from '../lib/store';
 
 interface Summary {
@@ -17,12 +18,64 @@ interface Summary {
 }
 
 export function ActivityPage() {
-  const [tab, setTab] = useState<'feed' | 'report'>('feed');
+  const [tab, setTab] = useState<'feed' | 'report' | 'goals'>('feed');
   return (
     <>
       <PageHeader title="Activity" back="/browse" />
-      <div className="mb-4"><Segmented label="View" value={tab} onChange={setTab} options={[{ value: 'feed', label: 'Activity feed' }, { value: 'report', label: 'Last 7 days' }]} /></div>
-      {tab === 'feed' ? <Feed /> : <Report />}
+      <div className="mb-4"><Segmented label="View" value={tab} onChange={setTab} options={[{ value: 'feed', label: 'Activity feed' }, { value: 'report', label: 'Last 7 days' }, { value: 'goals', label: 'Goals & karma' }]} /></div>
+      {tab === 'feed' ? <Feed /> : tab === 'report' ? <Report /> : <Goals />}
+    </>
+  );
+}
+
+function Goals() {
+  const today = useToday();
+  const user = useStore((s) => s.user);
+  const prefs = useStore((s) => s.prefs);
+  const from = addDays(today, -89);
+  const q = useQuery<Summary>({ queryKey: ['report', from, today], queryFn: () => api('GET', `/reports/summary?from=${from}&to=${today}`) });
+  const p = useMemo(
+    () => q.data && user ? computeProductivity(q.data.days, { dailyGoal: Number(prefs['productivity.dailyGoal']), weeklyGoal: Number(prefs['productivity.weeklyGoal']), daysOff: prefs['productivity.daysOff'] as number[], vacation: !!prefs['productivity.vacation'] }, today, user.weekStartsOn) : null,
+    [q.data, user, prefs, today],
+  );
+  if (!prefs['productivity.karma']) return <EmptyState title="Karma is turned off" body="Turn it on in Settings → Productivity to track daily and weekly goals." art={false} />;
+  if (q.isLoading) return <Spinner />;
+  if (!p) return <EmptyState title="Goals need a connection" art={false} />;
+  const daily = Number(prefs['productivity.dailyGoal']);
+  const weekly = Number(prefs['productivity.weeklyGoal']);
+  const stat = 'rounded-xl bg-surface p-4';
+  const bar = (v: number, max: number, label: string) => (
+    <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.min(v, max)} className="mt-2 h-2.5 overflow-hidden rounded-full bg-surface2">
+      <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${Math.min(100, (v / max) * 100)}%` }} />
+    </div>
+  );
+  const span = p.next ? p.next.at - p.level.at : 1;
+  return (
+    <>
+      {prefs['productivity.vacation'] && <p role="status" className="mb-3 rounded-lg bg-surface2 p-3 text-sm">Vacation mode is on. Goals and goal reminders are paused, and your streak is protected.</p>}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <section aria-label="Daily goal" className={stat}>
+          <p className="text-sm text-muted">Daily goal</p>
+          <p className="text-2xl font-semibold">{p.todayCount} <span className="text-base font-normal text-muted">/ {daily}</span></p>
+          {bar(p.todayCount, daily, 'Daily goal progress')}
+        </section>
+        <section aria-label="Weekly goal" className={stat}>
+          <p className="text-sm text-muted">Weekly goal</p>
+          <p className="text-2xl font-semibold">{p.weekCount} <span className="text-base font-normal text-muted">/ {weekly}</span></p>
+          {bar(p.weekCount, weekly, 'Weekly goal progress')}
+        </section>
+        <section aria-label="Goal streak" className={stat}>
+          <p className="text-sm text-muted">Goal streak</p>
+          <p className="flex items-center gap-1 text-2xl font-semibold"><Flame size={20} className="text-warn" aria-hidden />{p.streak} <span className="text-base font-normal text-muted">days</span></p>
+          <p className="text-xs text-muted">Longest in 90 days: {p.longest}</p>
+        </section>
+        <section aria-label="Karma" className={stat}>
+          <p className="text-sm text-muted">Karma (last 90 days)</p>
+          <p className="text-2xl font-semibold">{p.karma} <span className="text-base font-normal text-accent-text">{p.level.name}</span></p>
+          {p.next ? (<>{bar(p.karma - p.level.at, span, 'Progress to next karma level')}<p className="mt-1 text-xs text-muted">{p.next.at - p.karma} points to {p.next.name}</p></>) : <p className="text-xs text-muted">Top level reached.</p>}
+        </section>
+      </div>
+      <p className="mt-4 text-xs text-muted">Karma is 1 point per completed task plus 10 for every day you reach your daily goal. Days off never break a streak.</p>
     </>
   );
 }

@@ -488,6 +488,12 @@ export function completeTask(s: Scope, id: string, input: { version: number; occ
     }
     if (row.deadlineDate) patch.deadlineDate = addDays(row.deadlineDate, delta);
     s.tx.update(T).set(patch).where(eq(T.id, id)).run();
+    // "Reset sub-tasks on recurring completion": reopen finished sub-tasks for the next occurrence.
+    if (readBoolPref(s, 'tasks.resetSubtasks')) {
+      for (const d of descendantRows(s, id)) {
+        if (d.status === 'completed' && !d.deletedAt) s.tx.update(T).set({ status: 'open', completedAt: null, updatedAt: nowStr, version: d.version + 1 }).where(eq(T.id, d.id)).run();
+      }
+    }
   } else {
     s.tx.update(T).set({ status: 'completed', completedAt: nowStr, updatedAt: nowStr, version: row.version + 1 }).where(eq(T.id, id)).run();
   }
@@ -545,6 +551,49 @@ export function reopenTask(s: Scope, id: string, input: { version?: number; occu
   s.tx.update(T).set(patch).where(eq(T.id, id)).run();
   s.ev.activity({ entityType: 'task', entityId: id, projectId: row.projectId, action: 'task.reopened', summary: `reopened a task: ${row.title}` });
   s.ev.emit('task.changed', id, { ids: [id] });
+  return dto(s, id);
+}
+
+function readBoolPref(s: Scope, key: string): boolean {
+  const r = s.tx.select().from(schema.userPreferences).where(and(eq(schema.userPreferences.userId, s.ownerId), eq(schema.userPreferences.key, key))).get();
+  if (!r) return false;
+  try {
+    return JSON.parse(r.jsonValue) === true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------- archive / unarchive ----------
+/** Archive hides a task (and its sub-tasks) from every view without deleting it; it can be restored from Archived. */
+export function archiveTask(s: Scope, id: string): TaskDTO {
+  const row = loadOwnedTask(s, id);
+  if (row.deletedAt) throw notFound('Task');
+  if (row.status === 'archived') return dto(s, id);
+  const now = nowIso();
+  const all = [row, ...descendantRows(s, id)];
+  for (const t of all) {
+    if (!t.deletedAt && t.status !== 'archived') s.tx.update(T).set({ status: 'archived', updatedAt: now, version: t.version + 1 }).where(eq(T.id, t.id)).run();
+  }
+  s.ev.activity({ entityType: 'task', entityId: id, projectId: row.projectId, action: 'task.archived', summary: `archived a task: ${row.title}`, delta: { count: all.length, previousStatus: row.status } });
+  s.ev.emit('task.changed', id, { ids: all.map((t) => t.id) });
+  return dto(s, id);
+}
+
+export function unarchiveTask(s: Scope, id: string, restoreStatus: 'open' | 'completed' = 'open'): TaskDTO {
+  const row = loadOwnedTask(s, id);
+  if (row.deletedAt) throw notFound('Task');
+  if (row.status !== 'archived') return dto(s, id);
+  const now = nowIso();
+  const all = [row, ...descendantRows(s, id)];
+  for (const t of all) {
+    if (!t.deletedAt && t.status === 'archived') {
+      const status = t.completedAt ? 'completed' : t.id === id ? restoreStatus : 'open';
+      s.tx.update(T).set({ status, updatedAt: now, version: t.version + 1 }).where(eq(T.id, t.id)).run();
+    }
+  }
+  s.ev.activity({ entityType: 'task', entityId: id, projectId: row.projectId, action: 'task.unarchived', summary: `restored an archived task: ${row.title}` });
+  s.ev.emit('task.changed', id, { ids: all.map((t) => t.id) });
   return dto(s, id);
 }
 

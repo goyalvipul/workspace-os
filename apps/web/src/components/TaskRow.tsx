@@ -8,6 +8,7 @@ import { formatDateLabel, formatTime, isOverdue, localTimeOf, sortByPosition, ty
 import { actions, useStore } from '../lib/store';
 import { useHour12, useToday, useTz } from '../lib/hooks';
 import { Button, clsx } from './ui';
+import { Swipeable } from './Swipeable';
 
 export const PRIORITY_COLOR: Record<number, string> = { 1: '#e5484d', 2: '#f5a623', 3: '#4c8dff', 4: 'var(--muted)' };
 export const PRIORITY_LABEL: Record<number, string> = { 1: 'Priority 1', 2: 'Priority 2', 3: 'Priority 3', 4: 'Priority 4' };
@@ -110,6 +111,7 @@ export const TaskRow = memo(function TaskRow({ task, showProject, showDate = tru
   const dateColor = overdue ? 'text-danger' : date === today ? 'text-ok' : 'text-muted';
   const taskLabels = task.labelIds.map((id) => labels[id]).filter(Boolean);
   return (
+    <Swipeable task={task} disabled={dragging}>
     <div
       className={clsx('group flex items-start gap-0 border-b border-line/70 pr-2 outline-none', dragging && 'rounded-lg bg-surface shadow-lg')}
       style={{ paddingLeft: depth * 28 }}
@@ -153,6 +155,7 @@ export const TaskRow = memo(function TaskRow({ task, showProject, showDate = tru
         </button>
       )}
     </div>
+    </Swipeable>
   );
 });
 

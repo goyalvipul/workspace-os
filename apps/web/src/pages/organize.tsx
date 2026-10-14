@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Activity, ArrowUpToLine, CalendarDays, ChevronRight, Filter, Hash, Inbox, LayoutTemplate, Pencil, Plus, Search as SearchIcon, Settings, Star, Tag, Trash2 } from 'lucide-react';
+import { Activity, Archive, ArrowUpToLine, CalendarDays, ChevronRight, Filter, Hash, Inbox, LayoutTemplate, Pencil, Plus, Search as SearchIcon, Settings, Star, Tag, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { COLORS, compareTasks, descendantsOf, evalFilter, type FilterNode, type SavedFilterDTO, type TaskDTO, type TemplateBody, type TemplateDTO } from '@wos/shared';
@@ -74,7 +74,8 @@ export function BrowsePage() {
         <Link to="/calendar" className={row}><CalendarDays size={20} aria-hidden /> Calendar</Link>
         <Link to="/labels" className={row}><Filter size={20} aria-hidden /> Filters &amp; Labels</Link>
         <Link to="/templates" className={row}><LayoutTemplate size={20} aria-hidden /> Templates</Link>
-        <Link to="/activity" className={row}><Activity size={20} aria-hidden /> Activity &amp; reporting</Link>
+        <Link to="/activity" className={row}><Activity size={20} aria-hidden /> Activity &amp; productivity</Link>
+        <Link to="/archived" className={row}><Archive size={20} aria-hidden /> Archived tasks</Link>
       </nav>
       <div className="mb-1 mt-5 flex items-center justify-between px-3">
         <h2 className="text-sm font-semibold">Projects</h2>

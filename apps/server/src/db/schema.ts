@@ -35,6 +35,22 @@ export const sessions = sqliteTable(
   (t) => [index('sessions_user_idx').on(t.userId, t.revokedAt)],
 );
 
+/** Personal access tokens: scoped to /api/v1/capture* only (Siri / Apple Shortcuts / Apple Watch). Only the hash is stored. */
+export const apiTokens = sqliteTable(
+  'api_tokens',
+  {
+    id: text('id').primaryKey(),
+    ownerUserId: text('owner_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    tokenHint: text('token_hint').notNull(),
+    createdAt: text('created_at').notNull(),
+    lastUsedAt: text('last_used_at'),
+    revokedAt: text('revoked_at'),
+  },
+  (t) => [uniqueIndex('api_tokens_hash_unique').on(t.tokenHash), index('api_tokens_owner_idx').on(t.ownerUserId, t.revokedAt)],
+);
+
 export const appSettings = sqliteTable('app_settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),

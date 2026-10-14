@@ -33,7 +33,7 @@ test('projects: create, add a task, find it by search', async ({ page }, info) =
 test('main pages render without accessibility violations', async ({ page }) => {
   const found: string[] = [];
   page.on('pageerror', (e) => found.push('pageerror: ' + e.message));
-  for (const path of ['/today', '/inbox', '/upcoming', '/calendar', '/browse', '/labels', '/templates', '/activity', '/settings', '/settings/appearance', '/settings/accounts', '/settings/security']) {
+  for (const path of ['/today', '/inbox', '/upcoming', '/calendar', '/browse', '/labels', '/templates', '/activity', '/settings', '/settings/appearance', '/settings/accounts', '/settings/security', '/settings/general', '/settings/productivity', '/settings/reminders', '/settings/notifications', '/settings/integrations', '/settings/whatsnew', '/settings/help', '/archived']) {
     await page.goto(path);
     if (!(await page.locator('main').isVisible({ timeout: 5000 }).catch(() => false))) { found.push(path + ': main not rendered'); continue; }
     await page.waitForLoadState('networkidle');

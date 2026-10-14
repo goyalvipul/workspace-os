@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DOMPurify from 'dompurify';
-import { Copy, Flag, MoreHorizontal, Plus, Trash2, X, Clock, Target, CalendarClock } from 'lucide-react';
+import { Archive, Copy, Flag, MoreHorizontal, Plus, Trash2, X, Clock, Target, CalendarClock } from 'lucide-react';
 import { marked } from 'marked';
 import { useEffect, useMemo, useState } from 'react';
 import { buildDue, formatDateLabel, localTimeOf, sortByPosition, type CommentDTO, type TaskDTO } from '@wos/shared';
@@ -98,6 +98,15 @@ function TaskDetail({ id }: { id: string }) {
               }}
             >
               Duplicate
+            </MenuItem>
+            <MenuItem
+              icon={<Archive size={16} />}
+              onSelect={() => {
+                actions.openTask(null);
+                actions.archiveTask(id);
+              }}
+            >
+              Archive
             </MenuItem>
             <MenuSep />
             <MenuItem danger icon={<Trash2 size={16} />} onSelect={() => setConfirmDelete(true)}>
