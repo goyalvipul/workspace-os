@@ -1,0 +1,40 @@
+{
+  "name": "@wos/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
+    "build": "node build.mjs",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json",
+    "db:generate": "drizzle-kit generate",
+    "cli": "tsx --env-file-if-exists=../../.env src/cli.ts"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.2.0",
+    "@fastify/cookie": "^11.0.0",
+    "@fastify/helmet": "^13.0.0",
+    "@fastify/multipart": "^10.0.0",
+    "@fastify/rate-limit": "^11.0.0",
+    "@fastify/static": "^8.0.0",
+    "@node-rs/argon2": "^2.0.0",
+    "@wos/shared": "workspace:*",
+    "better-sqlite3": "^12.0.0",
+    "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.44.0",
+    "fastify": "^5.0.0",
+    "pino": "^9.0.0",
+    "rrule": "^2.8.1",
+    "ulid": "^3.0.0",
+    "web-push": "^3.6.7",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/web-push": "^3.6.0",
+    "drizzle-kit": "^0.31.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.0"
+  }
+}

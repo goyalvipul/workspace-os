@@ -1,0 +1,14 @@
+﻿node_modules
+.git
+.env
+.env.*
+!.env.example
+data
+backups
+references
+start
+test-results
+playwright-report
+.test-data
+**/dist
+*.sqlite*
