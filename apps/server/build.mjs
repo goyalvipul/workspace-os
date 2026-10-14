@@ -9,7 +9,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const read = (p) => JSON.parse(readFileSync(resolve(here, p), 'utf8'));
 const serverPkg = read('package.json');
 const sharedPkg = read('../../packages/shared/package.json');
-const external = [...new Set([...Object.keys(serverPkg.dependencies), ...Object.keys(sharedPkg.dependencies)])].filter((d) => d !== '@wos/shared');
+const external = [...new Set([...Object.keys(serverPkg.dependencies), ...Object.keys(sharedPkg.dependencies)])].filter((d) => d !== '@wos/shared' && d !== 'rrule'); // rrule's ESM entry is not Node-ESM compatible: bundle it
 
 rmSync(resolve(here, 'dist'), { recursive: true, force: true });
 mkdirSync(resolve(here, 'dist'), { recursive: true });

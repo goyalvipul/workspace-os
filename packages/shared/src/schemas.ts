@@ -1,4 +1,4 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 import { isValidDateStr, isValidTimezone, TIME_REGEX } from './dates.js';
 import { ULID_REGEX } from './ids.js';
 import { validateRule } from './recurrence.js';

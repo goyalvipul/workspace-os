@@ -36,7 +36,6 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
     loggerInstance: ctx.log,
     trustProxy: 'loopback,linklocal,uniquelocal',
     bodyLimit: 4 * 1024 * 1024,
-    disableRequestLogging: env.NODE_ENV === 'test',
     genReqId: () => Math.random().toString(36).slice(2, 10),
   });
 

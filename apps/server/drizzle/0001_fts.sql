@@ -1,4 +1,4 @@
-﻿CREATE VIRTUAL TABLE `tasks_fts` USING fts5(title, description, content='tasks', content_rowid='rowid', tokenize='unicode61 remove_diacritics 2');
+CREATE VIRTUAL TABLE `tasks_fts` USING fts5(title, description, content='tasks', content_rowid='rowid', tokenize='unicode61 remove_diacritics 2');
 --> statement-breakpoint
 CREATE TRIGGER `tasks_fts_ai` AFTER INSERT ON `tasks` BEGIN
   INSERT INTO tasks_fts(rowid, title, description) VALUES (new.rowid, new.title, new.description);

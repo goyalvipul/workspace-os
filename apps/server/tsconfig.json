@@ -1,1 +1,1 @@
-﻿{ "extends": "../../tsconfig.base.json", "compilerOptions": { "types": ["node"] }, "include": ["src", "drizzle.config.ts", "build.mjs"] }
+{ "extends": "../../tsconfig.base.json", "compilerOptions": { "types": ["node"] }, "include": ["src", "drizzle.config.ts", "build.mjs"] }
