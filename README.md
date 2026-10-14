@@ -3,6 +3,7 @@
 A self-hosted, single-owner task manager (Todoist-style) with a unified, read-only calendar (Google and Outlook). Lists, boards, recurring tasks, reminders, labels, filters and quick-add with natural language. It is an installable PWA that works offline, and it runs as a single small process with a SQLite file for data.
 
 - **Stack:** pnpm monorepo. `packages/shared` (schemas, dates, recurrence), `apps/server` (Fastify, Drizzle, SQLite), `apps/web` (React, Vite, Tailwind, Dexie).
+- **It is a PWA (Progressive Web App):** there is nothing to download from an app store. Open it in a browser over HTTPS and install it to your phone's home screen or your desktop; it then runs full-screen like a native app, caches itself for offline use, queues changes made offline, and can show reminder notifications. See [Install it as an app](#step-4b-install-it-as-an-app-pwa).
 - **Your data stays with you:** one SQLite file plus backups. Calendar providers are read-only; nothing is ever written back to Google or Microsoft.
 
 ---
@@ -159,7 +160,29 @@ Notes:
 
 Open your address in a browser. The first screen asks for the **setup code** (from Step 2) and lets you choose a username and password. This only works until an owner exists. After that you sign in normally. Sign-ups are closed.
 
-On a phone: open the address in Safari (iOS) or Chrome (Android) and use **Add to Home Screen**.
+### Step 4b. Install it as an app (PWA)
+
+Workspace OS is a PWA, so installing it is just a browser action. **It must be opened over HTTPS** (Tailscale Serve or your domain from Step 3, or `localhost`). Plain `http://` addresses cannot be installed, work offline or receive notifications.
+
+**iPhone / iPad (use Safari, not Chrome or an in-app browser)**
+1. Open your address (for example `https://todo.example.com`) in **Safari** and sign in.
+2. Tap **Share** and then **Add to Home Screen**.
+3. Make sure **"Open as Web App" is switched ON**, then tap **Add**. If that switch is off, the icon just opens a normal Safari tab with the address bar.
+4. Open it from the new home-screen icon. It should be full-screen with no browser bars. You have to sign in once more inside it, because an installed app does not share Safari's login.
+5. For notifications, open **Settings** in the app and enable reminders (iOS only delivers web push to apps installed this way, iOS 16.4 or newer).
+
+If it still opens with browser bars: delete the icon and add it again from Safari, check the toggle in step 3, and make sure the address is the same HTTPS address you sign in with.
+
+**Android (Chrome):** open the address, tap the menu (three dots), then **Install app** (or **Add to Home screen**).
+
+**Desktop (Chrome or Edge):** click the install icon at the right end of the address bar, or menu → **Install Workspace OS**.
+
+**Updating the installed app:** nothing to do. When a new version is deployed, the app shows an "update available" prompt; accept it to reload. If it ever looks stale, close the app completely and reopen it.
+
+**Behind Cloudflare?** If your domain is proxied by Cloudflare, make sure these settings are in place or the app may load an old version, or the install may not behave:
+- Add a **Cache Rule** that bypasses the cache for `/`, `/sw.js` and `/manifest.webmanifest`, and purge the cache after changing it.
+- Turn off **Rocket Loader** and **Web Analytics auto-injection** for the hostname. (The app already opts out of Rocket Loader and sends `no-cache, no-transform` on these files, but the dashboard settings win.)
+- In Nginx Proxy Manager keep **Cache Assets** off.
 
 ### Step 5. Connect calendars (optional)
 
