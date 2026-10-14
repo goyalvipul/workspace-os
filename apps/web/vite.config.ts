@@ -1,11 +1,18 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+/** Cloudflare's Rocket Loader rewrites <script> tags and breaks ES modules / service worker registration. This attribute opts the app's scripts out. */
+const noRocketLoader = (): Plugin => ({
+  name: 'no-rocket-loader',
+  transformIndexHtml: { order: 'post', handler: (html) => html.replace(/<script(?![^>]*data-cfasync)/g, '<script data-cfasync="false"') },
+});
+
 export default defineConfig({
   plugins: [
     react(),
+    noRocketLoader(),
     tailwindcss(),
     VitePWA({
       strategies: 'injectManifest',

@@ -150,7 +150,7 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
       wildcard: false,
       index: false,
       setHeaders: (res, path) => {
-        if (/(^|[\\/])(sw\.js|workbox-[^\\/]+\.js|index\.html|manifest\.webmanifest|registerSW\.js)$/.test(path)) res.setHeader('cache-control', 'no-cache');
+        if (/(^|[\\/])(sw\.js|workbox-[^\\/]+\.js|index\.html|manifest\.webmanifest|registerSW\.js)$/.test(path)) res.setHeader('cache-control', 'no-cache, no-transform');
         else if (/[\\/]assets[\\/]/.test(path)) res.setHeader('cache-control', 'public, max-age=31536000, immutable');
       },
     });
@@ -159,7 +159,7 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
       if (req.method !== 'GET' && req.method !== 'HEAD') return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Not found', requestId: req.id } });
       // a missing asset must stay a 404 rather than turning into the app shell
       if (/\.[A-Za-z0-9]{1,8}$/.test(req.url.split('?')[0] as string)) return reply.code(404).send('Not found');
-      return reply.header('cache-control', 'no-cache').type('text/html; charset=utf-8').send(indexHtml());
+      return reply.header('cache-control', 'no-cache, no-transform').type('text/html; charset=utf-8').send(indexHtml());
     });
   } else {
     app.setNotFoundHandler((req, reply) =>
