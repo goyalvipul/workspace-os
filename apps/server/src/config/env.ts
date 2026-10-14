@@ -8,6 +8,11 @@ const optionalString = z
   .optional()
   .transform((v) => (v && v.trim() !== '' ? v.trim() : undefined));
 
+/** Boolean env flag: only "true"/"1"/"yes"/"on" are true ("false" must not be truthy). */
+const flag = z
+  .string()
+  .optional()
+  .transform((v) => ['true', '1', 'yes', 'on'].includes((v ?? '').trim().toLowerCase()));
 const num = (def: number, min = 0) => z.coerce.number().int().min(min).default(def);
 
 const schema = z.object({
@@ -46,11 +51,11 @@ const schema = z.object({
   VAPID_PRIVATE_KEY: optionalString,
   VAPID_CONTACT_EMAIL: optionalString,
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-  DISABLE_SCHEDULER: z.coerce.boolean().default(false),
+  DISABLE_SCHEDULER: flag,
   GIT_SHA: z.string().default('dev'),
   BUILD_TIME: z.string().default(''),
   /** Test only: disable HTTP rate limits */
-  DISABLE_RATE_LIMIT: z.coerce.boolean().default(false),
+  DISABLE_RATE_LIMIT: flag,
 });
 
 export type Env = z.infer<typeof schema> & {
