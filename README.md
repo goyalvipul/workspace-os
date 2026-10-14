@@ -20,7 +20,7 @@ You need one machine that stays on: a Linux VPS or home server, a Windows PC, a 
 ### Step 1. Get the code and create your config
 
 ```bash
-git clone https://github.com/<you>/<this-repo>.git workspace-os
+git clone https://github.com/goyalvipul/workspace-os.git workspace-os
 cd workspace-os
 ```
 
