@@ -179,3 +179,14 @@ test('the app shell has a web manifest and registers a service worker', async ({
   const hasSw = await page.evaluate(async () => !!(await navigator.serviceWorker?.getRegistration()));
   expect(hasSw).toBe(true);
 });
+
+test('sidebar: the + next to Projects adds a project and opens it', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'the sidebar is desktop only');
+  const name = `Side ${info.project.name}`;
+  await page.goto('/today');
+  await page.getByRole('button', { name: 'New project' }).click();
+  await page.getByLabel('New project name').fill(name);
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('heading', { name })).toBeVisible();
+  await expect(page.getByRole('link', { name })).toBeVisible();
+});

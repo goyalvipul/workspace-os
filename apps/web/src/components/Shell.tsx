@@ -140,6 +140,9 @@ function Sidebar() {
   const todayCount = today.overdue.length + today.dueToday.length;
   const user = useStore((s) => s.user);
   const [showProjects, setShowProjects] = useState(true);
+  const [addingProject, setAddingProject] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const nav = useNavigate();
   const link = ({ isActive }: { isActive: boolean }) => clsx(navItem, isActive && 'bg-surface2 font-semibold text-accent-text');
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-line bg-surface/40 p-3" aria-label="Sidebar">
@@ -187,16 +190,49 @@ function Sidebar() {
             <button className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted" onClick={() => setShowProjects(!showProjects)} aria-expanded={showProjects}>
               <ChevronRight size={12} className={clsx('transition-transform', showProjects && 'rotate-90')} aria-hidden /> Projects
             </button>
-            <NavLink to="/browse" className="text-xs text-muted hover:text-fg" aria-label="All projects">
-              All
-            </NavLink>
+            <button type="button" aria-label="New project" title="New project" onClick={() => setAddingProject(true)} className="flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface2 hover:text-fg">
+              <Plus size={16} aria-hidden />
+            </button>
           </div>
+          {addingProject && (
+            <form
+              className="mb-1 flex gap-1 px-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!projectName.trim()) return;
+                const p = actions.createProject({ name: projectName });
+                setProjectName('');
+                setAddingProject(false);
+                nav(`/project/${p.id}`);
+              }}
+            >
+              <input
+                autoFocus
+                aria-label="New project name"
+                placeholder="Project name"
+                value={projectName}
+                maxLength={120}
+                onChange={(e) => setProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setAddingProject(false);
+                    setProjectName('');
+                  }
+                }}
+                className="min-h-9 min-w-0 flex-1 rounded-lg border border-line bg-surface px-2 text-sm text-fg placeholder:text-muted focus:border-accent-text focus:outline-none"
+              />
+              <Button type="submit" size="sm" variant="primary" disabled={!projectName.trim()}>Add</Button>
+            </form>
+          )}
           {showProjects &&
             flattenTree(tree).map((n) => (
               <NavLink key={n.project.id} to={`/project/${n.project.id}`} className={link} style={{ paddingLeft: 12 + n.depth * 14 }}>
                 <Hash size={16} style={{ color: n.project.color }} aria-hidden /> <span className="truncate">{n.project.name}</span>
               </NavLink>
             ))}
+          <NavLink to="/browse" className="mt-0.5 block px-3 py-1 text-xs text-muted hover:text-fg">
+            Browse all &amp; archived
+          </NavLink>
         </div>
       </nav>
       <div className="mt-2 space-y-1 border-t border-line pt-2">
