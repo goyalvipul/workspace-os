@@ -4,7 +4,7 @@ Things only you can do. In order of priority.
 
 ## 1. Run the app now (no Docker needed)
 ```powershell
-cd c:\Users\vipulgoyal\workspace\todo
+cd <path-to-repo>
 pnpm install
 pnpm build
 node --env-file=.env apps/server/dist/index.js
