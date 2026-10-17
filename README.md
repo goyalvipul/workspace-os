@@ -324,4 +324,4 @@ Tests use throwaway databases; they never touch your real data.
 
 ## Docs
 
-`docs/BUILD_STATUS.md` (what works, what is blocked), `docs/OWNER_ACTIONS.md` (what only you can do), and PRODUCT, ARCHITECTURE, DATA_MODEL, API, CALENDAR_SYNC, DEPLOY_WINDOWS_TAILSCALE, PWA_MOBILE, SECURITY, TESTING, BACKUP_RESTORE, PROVIDER_NOTES, TROUBLESHOOTING, RELEASE_CHECKLIST, DECISIONS. The live API reference is `/api/v1/openapi.json` (when signed in).
+`docs/BUILD_STATUS.md` (what works, what is blocked), `docs/OWNER_ACTIONS.md` (what only you can do), and PRODUCT, ARCHITECTURE, DATA_MODEL, API, CALENDAR_SYNC, DEPLOY_WINDOWS_TAILSCALE, PWA_MOBILE, SECURITY, TESTING, BACKUP_RESTORE, `MIGRATE_WINDOWS_TO_UBUNTU` (move the app and its data to a Linux machine), PROVIDER_NOTES, TROUBLESHOOTING, RELEASE_CHECKLIST, DECISIONS. The live API reference is `/api/v1/openapi.json` (when signed in).
