@@ -6,6 +6,7 @@ import { pruneOldEvents } from './calendar/store.js';
 import { pruneJobs, scheduleTick, workerTick } from './calendar/service.js';
 import { pruneSessions } from './services/auth.js';
 import { runBackup } from './services/backup.js';
+import { deliverTick } from './services/creatoros.js';
 import { pruneEvents } from './services/events.js';
 import { digestTick, pruneNotifications, reminderTick, snoozeTick } from './services/notifications.js';
 import { nowIso } from './util.js';
@@ -76,6 +77,9 @@ export function startScheduler(ctx: AppContext): Scheduler {
     await snoozeTick(ctx);
     await digestTick(ctx);
   });
+  const creatoros = guard('creatoros-delivery', async () => {
+    await deliverTick(ctx);
+  });
   const backup = guard('daily-backup', async () => {
     const last = ctx.db.select().from(schema.backups).where(eq(schema.backups.status, 'ok')).orderBy(desc(schema.backups.startedAt)).limit(1).get();
     if (last && Date.now() - Date.parse(last.startedAt) < 23 * 3_600_000) return;
@@ -96,6 +100,7 @@ export function startScheduler(ctx: AppContext): Scheduler {
   timers.push(setInterval(() => void work(), 3_000));
   timers.push(setInterval(() => void schedule(), 15_000));
   timers.push(setInterval(() => void reminders(), 30_000));
+  timers.push(setInterval(() => void creatoros(), 3_000));
   timers.push(setInterval(() => void backup(), 10 * 60_000));
   timers.push(setInterval(() => void prune(), 60 * 60_000));
   for (const t of timers) t.unref();

@@ -12,6 +12,7 @@ import { AppError } from './errors.js';
 import { SESSION_COOKIE, csrfTokenFor, lookupSession } from './services/auth.js';
 import { lookupApiToken } from './services/apitokens.js';
 import { registerIntegrations } from './routes/integrations.js';
+import { registerCreatoros } from './routes/creatoros.js';
 import { and, eq } from 'drizzle-orm';
 import { schema } from './db/client.js';
 import { nowIso, safeEqual, sha256 } from './util.js';
@@ -83,13 +84,16 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
       req.auth = found;
       if (!found) reply.clearCookie(SESSION_COOKIE, { path: '/' });
     }
-    // Personal access tokens (Siri / Shortcuts / Apple Watch) are honoured ONLY on the capture endpoints, and only when there is no browser session.
+    // Personal access tokens are honoured ONLY on the one URL family that matches their scope, and only when there is no browser session:
+    //   capture   (Siri / Shortcuts / Apple Watch) -> /api/v1/capture*
+    //   creatoros (CreatorOS)                       -> /api/v1/integrations/creatoros/tasks*
     let viaToken = false;
-    if (!req.auth && url.startsWith('/api/v1/capture')) {
+    const wantedScope = /^\/api\/v1\/capture(\/|\?|$)/.test(url) ? 'capture' : /^\/api\/v1\/integrations\/creatoros\/tasks(\/|\?|$)/.test(url) ? 'creatoros' : null;
+    if (!req.auth && wantedScope) {
       const m = /^Bearer\s+(\S+)$/i.exec(String(req.headers.authorization ?? ''));
       if (m) {
         const found = lookupApiToken(ctx, m[1] as string);
-        if (found) {
+        if (found && found.scope === wantedScope) {
           req.auth = { user: found.user, session: found.session };
           viaToken = true;
         }
@@ -152,6 +156,7 @@ export async function buildApp(ctx: AppContext, opts: { schedulerHealthy?: () =>
   registerCalendar(api, ctx);
   registerOps(api, ctx);
   registerIntegrations(api, ctx);
+  registerCreatoros(api, ctx);
 
   // ---------- static SPA ----------
   const dist = env.WEB_DIST_DIR ? resolve(env.WEB_DIST_DIR) : resolve(process.cwd(), 'apps/web/dist');

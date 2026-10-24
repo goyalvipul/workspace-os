@@ -11,7 +11,8 @@ export const CHANGELOG: ChangelogEntry[] = [
     title: 'Siri, Apple Watch and swipe actions',
     date: 'October 2026',
     items: [
-      'Hey Siri, add task: capture tasks by voice on iPhone, iPad, Mac and Apple Watch through Apple Shortcuts, using personal access tokens.',
+      'CreatorOS link: publish tasks (by hand, or automatically by label or project) to your CreatorOS app and let it complete, edit or add tasks back. Set it up under Settings, CreatorOS.',
+      'Hey Siri, Todo: a downloadable Apple Watch shortcut adds a task, updates the note on one of today\'s tasks, or reads today\'s list. Paste your access token when you import it.',
       'Swipe a task right to delete and left to archive, with undo. Choose the actions under Settings, General.',
       'New Archived list for tasks you want out of the way but not gone.',
       'Productivity: daily and weekly goals, goal streaks, karma levels, days off and vacation mode.',

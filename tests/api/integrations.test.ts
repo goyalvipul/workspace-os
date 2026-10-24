@@ -93,6 +93,21 @@ describe('personal access tokens, Siri capture and Apple Watch', () => {
     expect(j.json.items[0]).toHaveProperty('title');
   });
 
+  it('replaces the note on a numbered task from today', async () => {
+    const add = await bearer(token, 'POST', `${V}/capture`, { text: 'Watch note target today' });
+    expect(add.status).toBe(201);
+    const list = await bearer(token, 'GET', `${V}/capture/today`);
+    const index = (list.json.items as { title: string }[]).findIndex((i) => i.title === 'Watch note target') + 1;
+    expect(index).toBeGreaterThan(0);
+    const note = await bearer(token, 'POST', `${V}/capture/note`, { index, text: 'Bring the charger' });
+    expect(note.status).toBe(200);
+    expect(note.json.message).toContain('Watch note target');
+    const task = (await c.call('GET', `${V}/tasks/${add.json.task.id}`)).json.task;
+    expect(task.description).toBe('Bring the charger');
+    expect(task.title).toBe('Watch note target');
+    expect((await bearer(token, 'POST', `${V}/capture/note`, { index: 99, text: 'nope' })).status).toBe(400);
+  });
+
   it('honours "detect dates" off and the project-defaults-to-today rule', async () => {
     await c.call('PATCH', `${V}/preferences`, { 'dates.detect': false });
     const r = await bearer(token, 'POST', `${V}/capture`, { text: 'Read a book tomorrow' });

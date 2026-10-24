@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { passwordSchema, type CalendarAccountDTO, type CalendarProviderInfo, type SyncStatusDTO } from '@wos/shared';
 import { PageHeader } from '../components/PageHeader';
+import { CreatorOSSettings } from './settings-creatoros';
 import { Digests, General, Help, Integrations, Productivity, Reminders, Row, WhatsNew } from './settings-extra';
 import { Button, Confirm, EmptyState, Field, Input, Segmented, Select, Sheet, SheetHeader, Spinner, Switch, clsx } from '../components/ui';
 import { api, download, errorMessage } from '../lib/api';
@@ -19,8 +20,8 @@ const SECTIONS: { id: string; label: string; icon: ReactNode; hint: string }[] =
   { id: 'datetime', label: 'Date & time', icon: <Clock size={20} />, hint: 'Time zone, week start, clock' },
   { id: 'reminders', label: 'Reminders', icon: <AlarmClock size={20} />, hint: 'Snooze, automatic reminders, channel' },
   { id: 'notifications', label: 'Notifications', icon: <Bell size={20} />, hint: 'Push, morning overview, evening review' },
-  { id: 'integrations', label: 'Siri & Apple Watch', icon: <Mic size={20} />, hint: 'Add tasks by voice with Shortcuts' },
-  { id: 'accounts', label: 'Connected accounts', icon: <CalendarDays size={20} />, hint: 'Google and Microsoft calendars (read-only)' },
+  { id: 'integrations', label: 'Siri & Apple Watch', icon: <Mic size={20} />, hint: 'Add tasks and update notes from your Watch' },
+  { id: 'accounts', label: 'Integrations', icon: <CalendarDays size={20} />, hint: 'CreatorOS, and Google and Microsoft calendars' },
   { id: 'diagnostics', label: 'Sync diagnostics', icon: <Stethoscope size={20} />, hint: 'Calendar sync health' },
   { id: 'data', label: 'Import & export', icon: <Database size={20} />, hint: 'JSON, CSV, Todoist' },
   { id: 'backup', label: 'Backups', icon: <Archive size={20} />, hint: 'Create and download backups' },
@@ -32,7 +33,7 @@ const SECTIONS: { id: string; label: string; icon: ReactNode; hint: string }[] =
 
 export function SettingsPage() {
   const { section } = useParams();
-  const current = SECTIONS.find((s) => s.id === section);
+  const current = SECTIONS.find((s) => s.id === section) ?? (section === 'creatoros' ? SECTIONS.find((s) => s.id === 'accounts') : undefined);
   if (!current) {
     return (
       <>
@@ -67,7 +68,7 @@ export function SettingsPage() {
         {section === 'integrations' && <Integrations />}
         {section === 'whatsnew' && <WhatsNew />}
         {section === 'help' && <Help />}
-        {section === 'accounts' && <Accounts />}
+        {(section === 'accounts' || section === 'creatoros') && <Accounts />}
         {section === 'diagnostics' && <Diagnostics />}
         {section === 'data' && <ImportExport />}
         {section === 'backup' && <Backups />}
@@ -238,6 +239,12 @@ function Accounts() {
   };
   return (
     <>
+      <section aria-label="CreatorOS" className="space-y-5">
+        <h2 className="text-sm font-semibold">CreatorOS</h2>
+        <CreatorOSSettings />
+      </section>
+      <section aria-label="Calendars" className="space-y-5">
+      <h2 className="text-sm font-semibold">Calendars</h2>
       <p className="text-sm text-muted">Calendars are read-only. Workspace OS never creates, edits or deletes events in Google or Microsoft.</p>
       <div className="flex flex-wrap gap-2">
         {providers.data?.items.map((p) => <Button key={p.provider} variant="primary" disabled={!online} onClick={() => connect(p)}>Connect {p.label}{!p.configured && ' (setup needed)'}</Button>)}
@@ -285,6 +292,7 @@ function Accounts() {
           </div>
         </Sheet>
       )}
+      </section>
     </>
   );
 }
@@ -414,7 +422,7 @@ function Security() {
       <form className="space-y-3" onSubmit={async (e) => { e.preventDefault(); setBusy(true); try { await api('POST', '/auth/password', { currentPassword: cur, newPassword: next, logoutOthers: others }); toast('Password changed', 'success'); setCur(''); setNext(''); void sessions.refetch(); } catch (x) { toast(errorMessage(x), 'error'); } finally { setBusy(false); } }}>
         <h2 className="font-semibold">Change password</h2>
         <Field label="Current password" htmlFor="cp"><Input id="cp" type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} /></Field>
-        <Field label="New password" htmlFor="np" hint="At least 12 characters with upper case, lower case and a number."><Input id="np" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} /></Field>
+        <Field label="New password" htmlFor="np" hint="At least 6 characters."><Input id="np" type="password" autoComplete="new-password" minLength={6} maxLength={200} value={next} onChange={(e) => setNext(e.target.value)} /></Field>
         {next && !pw.success && <p role="alert" className="text-sm text-danger">{pw.error.issues[0]?.message}</p>}
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={others} onChange={(e) => setOthers(e.target.checked)} /> Sign out other devices</label>
         <Button type="submit" variant="primary" disabled={busy || !cur || !pw.success}>Change password</Button>

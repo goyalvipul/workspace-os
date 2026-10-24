@@ -409,11 +409,7 @@ export const preferenceDefaults: Record<PreferenceKey, unknown> = {
 };
 
 // ---------- Auth / user ----------
-export const passwordSchema = z
-  .string()
-  .min(12, 'Use at least 12 characters')
-  .max(200)
-  .refine((p) => /[a-z]/.test(p) && /[A-Z]/.test(p) && /\d/.test(p), 'Include upper case, lower case and a number');
+export const passwordSchema = z.string().min(6, 'Use at least 6 characters').max(200);
 
 export const userSchema = z.object({
   id: ulid,

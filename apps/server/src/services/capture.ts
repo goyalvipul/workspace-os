@@ -4,7 +4,8 @@ import type { AppContext } from '../context.js';
 import { schema } from '../db/client.js';
 import type { UserRow } from './auth.js';
 import { viewToday } from './queries.js';
-import { createTask, type Scope } from './tasks.js';
+import { badRequest } from '../errors.js';
+import { createTask, loadOwnedTask, patchTask, type Scope } from './tasks.js';
 import { createLabel, getPreferences } from './workspace.js';
 
 /**
@@ -82,4 +83,18 @@ export function todaySummary(ctx: AppContext, user: UserRow, limit = 25): { date
     ? `You have ${all.length} task${all.length === 1 ? '' : 's'} today${v.overdue.length ? ` (${v.overdue.length} overdue)` : ''}.\n` + items.map((i, n) => `${n + 1}. ${i.title}${i.time ? ` at ${i.time}` : ''}${i.overdue ? ' (overdue)' : ''}`).join('\n')
     : 'Nothing due today. Enjoy your day.';
   return { date, count: all.length, overdueCount: v.overdue.length, items, text };
+}
+
+/** The same order as `todaySummary`: overdue first, then due today. Numbers spoken by the shortcut are 1-based. */
+export function todayTaskIds(ctx: AppContext, user: UserRow, limit = 25): string[] {
+  const v = viewToday(ctx, user, todayLocal(user.timezone));
+  return [...v.overdue, ...v.dueToday].slice(0, limit).map((t) => t.id);
+}
+
+/** Replaces the note (description) on one of today's tasks. Used by the Apple Watch shortcut. */
+export function updateTodayNote(s: Scope, taskId: string, text: string): { message: string } {
+  const row = loadOwnedTask(s, taskId);
+  if (row.deletedAt || row.status !== 'open') throw badRequest('That task is not on today\'s list');
+  const task = patchTask(s, taskId, { version: row.version, description: text.trim() });
+  return { message: `Updated the note on "${task.title}"` };
 }

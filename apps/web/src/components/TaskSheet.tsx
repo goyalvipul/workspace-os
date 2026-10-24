@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DOMPurify from 'dompurify';
-import { Archive, Copy, Flag, MoreHorizontal, Plus, Trash2, X, Clock, Target, CalendarClock } from 'lucide-react';
+import { Archive, Copy, Flag, MoreHorizontal, Plus, Send, Trash2, X, Clock, Target, CalendarClock } from 'lucide-react';
 import { marked } from 'marked';
 import { useEffect, useMemo, useState } from 'react';
 import { buildDue, formatDateLabel, localTimeOf, sortByPosition, type CommentDTO, type TaskDTO } from '@wos/shared';
 import { api, errorMessage } from '../lib/api';
+import { CREATOROS_KEY, useCreatoros } from '../lib/creatoros';
 import { actions, toast, useStore } from '../lib/store';
 import { useToday, useTz } from '../lib/hooks';
 import { DatePicker, LabelPicker, PriorityPicker, ProjectPicker, RecurrencePicker, ReminderEditor } from './pickers';
@@ -61,6 +62,20 @@ function TaskDetail({ id }: { id: string }) {
   const dueTime = task.dueAtUtc ? localTimeOf(task.dueAtUtc, task.dueTimezone ?? tz) : null;
   const html = useMemo(() => (task.description ? renderMarkdown(task.description) : ''), [task.description]);
 
+  const qc = useQueryClient();
+  const co = useCreatoros();
+  const link = co.byTask.get(id);
+  const setPublished = async (on: boolean) => {
+    if (!online) return toast('Publishing needs a connection. Try again when you are online.', 'error');
+    try {
+      await api('POST', `/integrations/creatoros/${on ? 'publish' : 'unpublish'}`, { taskIds: [id] });
+      void qc.invalidateQueries({ queryKey: CREATOROS_KEY });
+      toast(on ? 'Publishing to CreatorOS' : 'Stopped publishing to CreatorOS', 'success');
+    } catch (e) {
+      toast(errorMessage(e), 'error');
+    }
+  };
+
   const commitTitle = () => {
     const t = title.trim();
     if (!t) return setTitle(task.title);
@@ -82,6 +97,11 @@ function TaskDetail({ id }: { id: string }) {
             </button>
           ) : null}{' '}
           {project ? project.name : 'Inbox'}
+          {link && (
+            <span className="ml-2 rounded bg-surface2 px-1.5 py-0.5 text-xs" title="Published to CreatorOS">
+              CreatorOS: {link.state === 'synced' ? 'up to date' : link.state === 'pending' ? 'sending' : 'failed'}
+            </span>
+          )}
         </div>
         <MenuRoot>
           <MenuTrigger asChild>
@@ -99,6 +119,11 @@ function TaskDetail({ id }: { id: string }) {
             >
               Duplicate
             </MenuItem>
+            {co.status?.enabled && (
+              <MenuItem icon={<Send size={16} />} onSelect={() => void setPublished(!link)}>
+                {link ? 'Stop publishing to CreatorOS' : 'Publish to CreatorOS'}
+              </MenuItem>
+            )}
             <MenuItem
               icon={<Archive size={16} />}
               onSelect={() => {

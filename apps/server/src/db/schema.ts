@@ -42,6 +42,8 @@ export const apiTokens = sqliteTable(
     id: text('id').primaryKey(),
     ownerUserId: text('owner_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    /** 'capture' (Siri / Shortcuts: /capture* only) or 'creatoros' (CreatorOS: /integrations/creatoros/tasks* only). */
+    scope: text('scope').notNull().default('capture'),
     tokenHash: text('token_hash').notNull(),
     tokenHint: text('token_hint').notNull(),
     createdAt: text('created_at').notNull(),
@@ -498,6 +500,56 @@ export const importRuns = sqliteTable('import_runs', {
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+/** Outbound link to the owner's CreatorOS instance. The HMAC signing secret is encrypted at rest. */
+export const creatorosConfig = sqliteTable('creatoros_config', {
+  ownerUserId: text('owner_user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  webhookUrl: text('webhook_url').notNull(),
+  secretCiphertext: text('secret_ciphertext').notNull(),
+  encryptionKeyVersion: integer('encryption_key_version').notNull().default(1),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  /** Tasks carrying this label are published automatically. */
+  autoLabelId: text('auto_label_id').references(() => labels.id, { onDelete: 'set null' }),
+  /** Open tasks in this project are published automatically. */
+  autoProjectId: text('auto_project_id').references(() => projects.id, { onDelete: 'set null' }),
+  lastSuccessAt: text('last_success_at'),
+  lastError: text('last_error'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+/** A task that is published to CreatorOS. `syncedVersion` is the task version CreatorOS is known to hold. */
+export const creatorosTaskLinks = sqliteTable(
+  'creatoros_task_links',
+  {
+    taskId: text('task_id').primaryKey().references(() => tasks.id, { onDelete: 'cascade' }),
+    ownerUserId: text('owner_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    externalId: text('external_id'),
+    origin: text('origin').notNull().default('manual'), // manual | auto | creatoros
+    syncedVersion: integer('synced_version').notNull().default(0),
+    linkedAt: text('linked_at').notNull(),
+  },
+  (t) => [uniqueIndex('creatoros_task_links_external_uq').on(t.ownerUserId, t.externalId).where(sql`${t.externalId} IS NOT NULL`)],
+);
+
+/** Pending deliveries. One row per task: later changes coalesce into it because the payload is built at send time. */
+export const creatorosOutbox = sqliteTable(
+  'creatoros_outbox',
+  {
+    taskId: text('task_id').primaryKey().references(() => tasks.id, { onDelete: 'cascade' }),
+    ownerUserId: text('owner_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(), // upsert | remove
+    reason: text('reason'), // for remove: deleted | unpublished
+    externalId: text('external_id'),
+    status: text('status').notNull().default('pending'), // pending | failed
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: text('next_attempt_at').notNull(),
+    lastError: text('last_error'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => [index('creatoros_outbox_due_idx').on(t.status, t.nextAttemptAt)],
+);
 
 export const jobLeases = sqliteTable('job_leases', {
   name: text('name').primaryKey(),

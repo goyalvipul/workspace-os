@@ -1,0 +1,12 @@
+{
+  "appVersion": "dev",
+  "schemaVersion": 4,
+  "schemaTag": "0003_api_tokens",
+  "timestamp": "2026-10-17T22:20:27.754Z",
+  "dbSha256": "20710764d3f00846a87b7eea39935621104a34593345f9faf01db47a7da0c61e",
+  "archiveSha256": "df64158b462b0f576023ac4e073bdf96c0ace1c8e2a49883d8f78b410913f3e1",
+  "archiveFile": "workspace-2026-10-17T22-20-27-754Z-8gmnfe.sqlite.gz",
+  "filesIncluded": [
+    "workspace.sqlite"
+  ]
+}

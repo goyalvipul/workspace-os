@@ -7,32 +7,38 @@ import { MIN, nowIso, randomToken, sha256 } from '../util.js';
 import type { SessionRow, UserRow } from './auth.js';
 import type { Scope } from './tasks.js';
 
-// Personal access tokens for Siri / Apple Shortcuts / Apple Watch. A token is only accepted by the
-// /api/v1/capture* endpoints (add a task, read today's list) — it cannot read or change anything else.
+// Personal access tokens. Each token has exactly one scope and is honoured on exactly one URL family:
+//   capture   -> /api/v1/capture*                        (Siri / Apple Shortcuts / Apple Watch: add a task, read today's list)
+//   creatoros -> /api/v1/integrations/creatoros/tasks*   (CreatorOS: read, create and update tasks that are published to it)
+// A token cannot read or change anything else.
 
 export const TOKEN_PREFIX = 'wos_';
+export type TokenScope = 'capture' | 'creatoros';
+export const TOKEN_SCOPES: readonly TokenScope[] = ['capture', 'creatoros'];
 const T = schema.apiTokens;
 
 export interface ApiTokenDTO {
   id: string;
   name: string;
+  scope: TokenScope;
   hint: string;
   createdAt: string;
   lastUsedAt: string | null;
 }
 
-const toDTO = (r: typeof T.$inferSelect): ApiTokenDTO => ({ id: r.id, name: r.name, hint: r.tokenHint, createdAt: r.createdAt, lastUsedAt: r.lastUsedAt });
+const toScope = (v: string): TokenScope => (v === 'creatoros' ? 'creatoros' : 'capture');
+const toDTO = (r: typeof T.$inferSelect): ApiTokenDTO => ({ id: r.id, name: r.name, scope: toScope(r.scope), hint: r.tokenHint, createdAt: r.createdAt, lastUsedAt: r.lastUsedAt });
 
 export function listApiTokens(ctx: AppContext, ownerId: string): ApiTokenDTO[] {
   return ctx.db.select().from(T).where(and(eq(T.ownerUserId, ownerId), isNull(T.revokedAt))).orderBy(desc(T.createdAt)).all().map(toDTO);
 }
 
 /** Creates a token inside the caller's transaction. The plaintext is returned once and never stored. */
-export function createApiToken(s: Scope, name: string): { token: string; item: ApiTokenDTO } {
+export function createApiToken(s: Scope, name: string, scope: TokenScope = 'capture'): { token: string; item: ApiTokenDTO } {
   const token = `${TOKEN_PREFIX}${randomToken(30)}`;
   const id = newId();
   const now = nowIso();
-  s.tx.insert(T).values({ id, ownerUserId: s.ownerId, name: name.trim(), tokenHash: sha256(token), tokenHint: `${token.slice(0, 8)}…${token.slice(-4)}`, createdAt: now }).run();
+  s.tx.insert(T).values({ id, ownerUserId: s.ownerId, name: name.trim(), scope, tokenHash: sha256(token), tokenHint: `${token.slice(0, 8)}…${token.slice(-4)}`, createdAt: now }).run();
   s.ev.activity({ entityType: 'api_token', entityId: id, action: 'api_token.created', summary: `created an access token: ${name.trim()}` });
   s.ev.emit('settings.changed', id, { apiTokens: true });
   const row = s.tx.select().from(T).where(eq(T.id, id)).get() as typeof T.$inferSelect;
@@ -48,7 +54,7 @@ export function revokeApiToken(s: Scope, id: string): void {
 }
 
 /** Resolves a bearer token to its owner. Returns a synthetic session so the shared request plumbing keeps working. */
-export function lookupApiToken(ctx: AppContext, token: string): { user: UserRow; session: SessionRow; tokenId: string } | null {
+export function lookupApiToken(ctx: AppContext, token: string): { user: UserRow; session: SessionRow; tokenId: string; scope: TokenScope } | null {
   if (!token.startsWith(TOKEN_PREFIX) || token.length > 200) return null;
   const row = ctx.db.select().from(T).where(eq(T.tokenHash, sha256(token))).get();
   if (!row || row.revokedAt) return null;
@@ -58,5 +64,5 @@ export function lookupApiToken(ctx: AppContext, token: string): { user: UserRow;
   if (!row.lastUsedAt || now - Date.parse(row.lastUsedAt) > MIN) ctx.db.update(T).set({ lastUsedAt: nowIso() }).where(eq(T.id, row.id)).run();
   const stamp = nowIso();
   const session: SessionRow = { id: `token:${row.id}`, userId: user.id, tokenHash: row.tokenHash, csrfSecretHash: '', userAgent: null, createdAt: row.createdAt, expiresAt: stamp, revokedAt: null, lastSeenAt: stamp };
-  return { user, session, tokenId: row.id };
+  return { user, session, tokenId: row.id, scope: toScope(row.scope) };
 }

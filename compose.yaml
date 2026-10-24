@@ -17,12 +17,17 @@ services:
       APP_HOST: 0.0.0.0
       DATABASE_PATH: /data/workspace.sqlite
       BACKUP_DIR: /backups
+      # This address is how you reach the app on the tailnet while the public name is down.
+      TRUSTED_ORIGINS: http://100.108.120.8:4390
     ports:
       # Published on loopback only. Expose to your phone with Tailscale Serve (docs/DEPLOY_WINDOWS_TAILSCALE.md).
-      - "127.0.0.1:${HOST_PUBLISHED_PORT:-4390}:3000"
+      - "100.108.120.8:4390:3000"
     volumes:
-      - wos-data:/data
-      - wos-backups:/backups
+       - /home/vipul/workspace/workspace-os/data:/data
+       - /home/vipul/workspace/workspace-os/backups:/backups
+       # Built web app, so a screen change does not need a full image rebuild.
+       - /home/vipul/workspace/workspace-os/apps/web/dist:/app/web:ro
+       - /home/vipul/workspace/workspace-os/apps/server/dist:/app/dist:ro
     read_only: true
     tmpfs:
       - /tmp

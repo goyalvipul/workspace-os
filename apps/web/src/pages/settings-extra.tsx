@@ -1,12 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Copy, KeyRound, Trash2, Volume2 } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { SWIPE_ACTIONS, type SwipeAction } from '@wos/shared';
 import { Button, Confirm, Field, Input, Segmented, Select, Spinner, Switch, clsx } from '../components/ui';
 import { api, errorMessage } from '../lib/api';
 import { CHANGELOG } from '../lib/changelog';
 import { playTone } from '../lib/sound';
+import { downloadWatchShortcut } from '../lib/watch-shortcut';
 import { actions, refresh, toast, useStore } from '../lib/store';
 
 export function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
@@ -186,13 +187,13 @@ export function Digests() {
 }
 
 // ---------------------------------------------------------------- Siri, Shortcuts & Apple Watch
-interface TokenItem { id: string; name: string; hint: string; createdAt: string; lastUsedAt: string | null }
+export interface TokenItem { id: string; name: string; scope?: 'capture' | 'creatoros'; hint: string; createdAt: string; lastUsedAt: string | null }
 
-function Code({ children }: { children: ReactNode }) {
+export function Code({ children }: { children: ReactNode }) {
   return <code className="break-all rounded bg-surface2 px-1.5 py-0.5 text-[12px]">{children}</code>;
 }
 
-function CopyButton({ text, label }: { text: string; label: string }) {
+export function CopyButton({ text, label }: { text: string; label: string }) {
   const [done, setDone] = useState(false);
   return (
     <Button size="sm" aria-label={label} onClick={async () => { try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); } catch { toast('Copy is not available here. Select the text and copy it by hand.', 'error'); } }}>
@@ -206,6 +207,7 @@ export function Integrations() {
   const origin = window.location.origin;
   const endpoint = `${origin}/api/v1/capture`;
   const list = useQuery<{ items: TokenItem[] }>({ queryKey: ['api-tokens'], queryFn: () => api('GET', '/api-tokens') });
+  const captureTokens = useMemo(() => (list.data?.items ?? []).filter((t) => t.scope !== 'creatoros'), [list.data]);
   const [name, setName] = useState('Siri & Apple Watch');
   const [fresh, setFresh] = useState<{ token: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -225,13 +227,13 @@ export function Integrations() {
   return (
     <>
       <p className="text-sm text-muted">
-        Add tasks by voice with <strong className="text-fg">Hey Siri</strong> on iPhone, iPad, Mac and <strong className="text-fg">Apple Watch</strong>, using the Apple Shortcuts app. Your words go through the same smart parser as Quick Add, so
-        &ldquo;Hey Siri, add task&rdquo; &rarr; &ldquo;Call mom tomorrow at 5pm p2 #Family&rdquo; just works.
+        Add tasks and update notes by voice with <strong className="text-fg">Hey Siri</strong> on iPhone, iPad, Mac and <strong className="text-fg">Apple Watch</strong>. Download the shortcut below, paste a token into it, and say <strong className="text-fg">Hey Siri, Todo</strong>.
+        Spoken tasks use the same parser as Quick Add, so &ldquo;Call mom tomorrow at 5pm p2 #Family&rdquo; just works.
       </p>
 
       <section aria-label="Access tokens" className="rounded-xl bg-surface p-4">
         <h2 className="flex items-center gap-2 font-semibold"><KeyRound size={18} aria-hidden /> Step 1. Create an access token</h2>
-        <p className="mt-1 text-xs text-muted">A token lets a shortcut add tasks and read today&rsquo;s list. It cannot see anything else, and you can revoke it any time. Make one per device.</p>
+        <p className="mt-1 text-xs text-muted">A token lets a shortcut add tasks, update the note on a task that is due today, and read today&rsquo;s list. It cannot see anything else, and you can revoke it any time. Make one per device.</p>
         <div className="mt-3 flex flex-wrap items-end gap-2">
           <div className="min-w-[12rem] flex-1"><Field label="Token name" htmlFor="tok-name"><Input id="tok-name" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></Field></div>
           <Button variant="primary" onClick={create} disabled={busy}>Create token</Button>
@@ -245,9 +247,9 @@ export function Integrations() {
         )}
         <div className="mt-4">
           <h3 className="text-sm font-semibold">Your tokens</h3>
-          {list.isLoading ? <Spinner /> : !list.data?.items.length ? <p className="py-2 text-sm text-muted">No tokens yet.</p> : (
+          {list.isLoading ? <Spinner /> : !captureTokens.length ? <p className="py-2 text-sm text-muted">No tokens yet.</p> : (
             <ul>
-              {list.data.items.map((t) => (
+              {captureTokens.map((t) => (
                 <li key={t.id} className="flex items-center gap-3 border-b border-line/60 py-2 text-sm">
                   <span className="min-w-0 flex-1"><span className="block truncate">{t.name}</span><span className="block text-xs text-muted">{t.hint} · {t.lastUsedAt ? `used ${new Date(t.lastUsedAt).toLocaleDateString()}` : 'never used'}</span></span>
                   <Button size="sm" variant="ghost" aria-label={`Revoke ${t.name}`} onClick={() => setRevoke(t)}><Trash2 size={16} aria-hidden /></Button>
@@ -286,14 +288,19 @@ export function Integrations() {
 
       <section aria-label="Apple Watch" className="rounded-xl bg-surface p-4">
         <h2 className="font-semibold">Step 3. Apple Watch</h2>
+        <p className="mt-1 text-sm text-muted">
+          Download this shortcut on your iPhone and open it. It asks for the token from step 1 and the server address. The shortcut is named <strong className="text-fg">Todo</strong>.
+        </p>
+        <Button className="mt-3" onClick={() => downloadWatchShortcut(origin)}>Download Apple Watch shortcut</Button>
         <ol className={step}>
-          <li>Shortcuts you make on your iPhone appear on your Watch automatically. In the shortcut, tap the <strong>(i)</strong> details button and make sure <strong>Show on Apple Watch</strong> is on.</li>
-          <li>Raise your wrist and say <strong>&ldquo;Hey Siri, Add task&rdquo;</strong>, or open the <strong>Shortcuts</strong> app on the Watch and tap it. Dictation happens on the Watch and the task is sent straight to your server.</li>
-          <li>For one-tap access, add the <strong>Shortcuts</strong> complication to your watch face, or assign the shortcut to the <strong>Action Button</strong> on Apple Watch Ultra.</li>
+          <li>On your iPhone, open the downloaded <strong>Todo.shortcut</strong> file in Safari. If iOS blocks it, open Settings, Shortcuts, and turn on Allow Untrusted Shortcuts (run any shortcut once first if that switch is missing).</li>
+          <li>Paste the access token when asked. Leave the server address as shown if you opened this page on the public https name. If you opened it on a private address, change the server to <Code>https://todo.goyalfamily.ca</Code> with no slash at the end. To change either later, edit the Token or Server action.</li>
+          <li>Open the shortcut&rsquo;s details and turn on <strong>Show on Apple Watch</strong>. It copies to the Watch over iCloud. You can also add it to a watch face or the Action Button.</li>
+          <li>On the Watch, say <strong>Hey Siri, Todo</strong>, or open the Shortcuts app and tap Todo. Choose Add a task, Update a note, or What&rsquo;s on today.</li>
+          <li>Update a note reads today&rsquo;s numbered list, asks which number, then replaces that task&rsquo;s note with what you dictate. The task name stays the same.</li>
         </ol>
         <p className="mt-3 text-xs text-muted">
-          The Watch calls your server over Wi-Fi or cellular, so use a web address that works outside your home network (for example your public https name). A Tailscale-only address will not work from the Watch.
-          This is Shortcuts-based Watch support. A separate native Watch app would need Xcode and an Apple developer account and is not part of this self-hosted web app.
+          The Watch calls that address over Wi-Fi or cellular. It needs the public https name, which has to be reachable from the internet. A private Tailscale address will not work from the Watch.
         </p>
       </section>
 

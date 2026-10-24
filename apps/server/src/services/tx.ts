@@ -2,6 +2,7 @@ import { newId } from '@wos/shared';
 import type { AppContext, AppEventRow } from '../context.js';
 import { schema, type Tx } from '../db/client.js';
 import { nowIso } from '../util.js';
+import { queueChangedTasks } from './creatoros-sync.js';
 
 export interface Emitter {
   /** Durable event (app_events); published to SSE only after the transaction commits. */
@@ -52,7 +53,16 @@ export function transact<T>(ctx: AppContext, ownerId: string, fn: (tx: Tx, ev: E
           .run();
       },
     };
-    return fn(tx, ev);
+    const out = fn(tx, ev);
+    // Same transaction: queue CreatorOS deliveries for any published task this mutation touched.
+    const touched = new Set<string>();
+    for (const e of pending) {
+      if (e.eventType !== 'task.changed') continue;
+      const ids = e.payload.ids;
+      if (Array.isArray(ids)) for (const id of ids) if (typeof id === 'string') touched.add(id);
+    }
+    if (touched.size) queueChangedTasks(tx, ownerId, [...touched]);
+    return out;
   });
   for (const e of pending) ctx.bus.publish(e);
   return result;
