@@ -1,4 +1,4 @@
-import { ArrowUpRight, Calendar, CalendarDays, CloudOff, Hash, House, Inbox, LayoutList, ListTodo, Menu, Plus, RefreshCw, Search, Settings, WifiOff, Filter, ChevronRight, X } from 'lucide-react';
+import { Calendar, CalendarDays, CloudOff, Hash, House, Inbox, LayoutList, ListTodo, Menu, Plus, RefreshCw, Search, Settings, WifiOff, Filter, ChevronRight, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { actions, flush, resolveConflict, useStore } from '../lib/store';
@@ -317,7 +317,7 @@ function MobileCaptureDock() {
     <div className="wos-capture-dock md:hidden" role="group" aria-label="Quick actions">
       <button type="button" onClick={() => actions.openQuickAdd()} aria-label="Add task" className="wos-capture-plus"><Plus size={24} aria-hidden /></button>
       <button type="button" onClick={() => actions.openQuickAdd()} className="min-w-0 flex-1 truncate py-3 text-left text-sm font-semibold text-muted">Capture a task or reminder...</button>
-      <button type="button" onClick={() => navigate('/search')} aria-label="Search tasks" className="wos-capture-search"><ArrowUpRight size={21} aria-hidden /></button>
+      <button type="button" onClick={() => navigate('/search')} aria-label="Search tasks" className="wos-capture-search"><Search size={21} aria-hidden /></button>
     </div>
   );
 }
