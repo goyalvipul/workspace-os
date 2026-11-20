@@ -1,7 +1,6 @@
-import { Calendar, CalendarDays, CloudOff, Hash, Inbox, LayoutList, Plus, RefreshCw, Search, Settings, Tag, WifiOff, Filter, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { ArrowUpRight, Calendar, CalendarDays, CloudOff, Hash, House, Inbox, LayoutList, ListTodo, Menu, Plus, RefreshCw, Search, Settings, WifiOff, Filter, ChevronRight, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { parseDate } from '@wos/shared';
 import { actions, flush, resolveConflict, useStore } from '../lib/store';
 import { useIsDesktop } from '../lib/hooks';
 import { flattenTree, useAllTasks, useProjectTree, useTodayView } from '../lib/selectors';
@@ -129,7 +128,7 @@ function ConflictDialog() {
   );
 }
 
-const navItem = 'flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm hover:bg-surface2';
+const navItem = 'flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition-colors hover:bg-surface2';
 
 function Sidebar() {
   const tasks = useAllTasks();
@@ -145,18 +144,20 @@ function Sidebar() {
   const nav = useNavigate();
   const link = ({ isActive }: { isActive: boolean }) => clsx(navItem, isActive && 'bg-surface2 font-semibold text-accent-text');
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-line bg-surface/40 p-3" aria-label="Sidebar">
-      <div className="mb-3 flex items-center gap-2 px-2 pt-1">
-        <img src="/icons/icon.svg" alt="" className="h-7 w-7 rounded-lg" />
-        <span className="font-semibold">Workspace OS</span>
+    <aside className="wos-sidebar flex w-[268px] shrink-0 flex-col border-r border-line p-3" aria-label="Sidebar">
+      <div className="mb-6 flex items-center gap-3 px-2 pt-4">
+        <img src="/icons/icon.svg" alt="" className="h-10 w-10 rounded-2xl bg-surface p-1 shadow-sm" />
+        <span className="text-base font-extrabold tracking-tight">Workspace OS</span>
       </div>
-      <button type="button" onClick={() => actions.openQuickAdd()} className="mb-2 flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold text-accent-text hover:bg-surface2">
+      <button type="button" onClick={() => actions.openQuickAdd()} className="wos-sidebar-add mb-5 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-bold hover:brightness-95">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-fg">
           <Plus size={16} />
         </span>
         Add task <kbd className="ml-auto rounded bg-surface2 px-1.5 text-xs text-muted">Q</kbd>
       </button>
       <nav className="flex-1 space-y-0.5 overflow-y-auto scroll-thin" aria-label="Main">
+        <NavLink to="/home" className={link}><House size={18} aria-hidden /> Home</NavLink>
+        <NavLink to="/tasks" className={link}><ListTodo size={18} aria-hidden /> All tasks</NavLink>
         <NavLink to="/search" className={link}>
           <Search size={18} aria-hidden /> Search
         </NavLink>
@@ -248,36 +249,76 @@ function Sidebar() {
   );
 }
 
-function BottomNav() {
+
+const mobilePrimary = [
+  { to: '/home', label: 'Home' },
+  { to: '/calendar', label: 'Calendar' },
+  { to: '/tasks', label: 'Tasks' },
+  { to: '/today', label: 'Today' },
+  { to: '/upcoming', label: 'Upcoming' },
+] as const;
+const mobileMore = [
+  { to: '/home', label: 'Home', icon: House },
+  { to: '/today', label: 'Today', icon: CalendarDays },
+  { to: '/tasks', label: 'All tasks', icon: ListTodo },
+  { to: '/inbox', label: 'Inbox', icon: Inbox },
+  { to: '/calendar', label: 'Calendar', icon: Calendar },
+  { to: '/upcoming', label: 'Upcoming', icon: LayoutList },
+  { to: '/browse', label: 'Projects & browse', icon: Hash },
+  { to: '/labels', label: 'Filters & labels', icon: Filter },
+  { to: '/search', label: 'Search', icon: Search },
+  { to: '/activity', label: 'Activity & productivity', icon: RefreshCw },
+  { to: '/settings', label: 'Settings', icon: Settings },
+] as const;
+
+function MobileNav() {
   const { pathname } = useLocation();
-  const today = useTodayView();
-  const dayNum = useMemo(() => parseDate(today.date).d, [today.date]);
-  const tab = (to: string, label: string, icon: React.ReactNode, match: (p: string) => boolean) => {
-    const active = match(pathname);
-    return (
-      <NavLink to={to} aria-current={active ? 'page' : undefined} className={clsx('flex min-h-[52px] min-w-[68px] flex-col items-center justify-center gap-0.5 rounded-full px-3 text-[11px]', active ? 'bg-surface2 font-semibold text-accent-text' : 'text-fg')}>
-        {icon}
-        {label}
-      </NavLink>
-    );
-  };
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   return (
     <>
-      <button type="button" onClick={() => actions.openQuickAdd()} aria-label="Add task" className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-fg shadow-xl active:scale-95" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
-        <Plus size={28} />
-      </button>
-      <nav aria-label="Main" className="safe-bottom fixed inset-x-3 bottom-3 z-20 mb-0 flex items-center justify-around rounded-full border border-line bg-surface/95 p-1 shadow-xl backdrop-blur" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
-        {tab('/inbox', 'Inbox', <Inbox size={22} aria-hidden />, (p) => p.startsWith('/inbox'))}
-        {tab(
-          '/today',
-          'Today',
-          <span className="relative flex h-[22px] w-[22px] items-center justify-center rounded-[5px] border-2 border-current text-[10px] font-bold leading-none">{dayNum}</span>,
-          (p) => p.startsWith('/today'),
-        )}
-        {tab('/upcoming', 'Upcoming', <LayoutList size={22} aria-hidden />, (p) => p.startsWith('/upcoming') || p.startsWith('/calendar'))}
-        {tab('/browse', 'Browse', <Tag size={22} aria-hidden />, (p) => !/^\/(inbox|today|upcoming|calendar)/.test(p))}
-      </nav>
+      <header className="wos-mobile-header md:hidden">
+        <button type="button" aria-label="Open navigation menu" aria-expanded={open} onClick={() => setOpen(true)} className="wos-mobile-menu">
+          <Menu size={25} aria-hidden />
+        </button>
+        <nav aria-label="Primary pages" className="wos-mobile-pills no-scrollbar">
+          {mobilePrimary.map(({ to, label }) => {
+            const active = pathname === to;
+            return <NavLink key={to} to={to} aria-current={active ? 'page' : undefined} className={clsx('wos-mobile-pill', active && 'wos-mobile-pill-active')}>{label}</NavLink>;
+          })}
+        </nav>
+        <button type="button" aria-label="Search" onClick={() => navigate('/search')} className="wos-mobile-search">
+          <Search size={22} aria-hidden />
+        </button>
+      </header>
+      <Sheet open={open} onOpenChange={setOpen} title="Navigate Workspace OS">
+        <div className="max-h-[85dvh] overflow-y-auto p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div><h2 className="text-2xl font-extrabold">Your workspace</h2><p className="mt-1 text-sm text-muted">Everything, in one place.</p></div>
+            <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="wos-mobile-menu"><X size={21} aria-hidden /></button>
+          </div>
+          <nav aria-label="All pages" className="grid grid-cols-2 gap-2">
+            {mobileMore.map(({ to, label, icon: Icon }) => (
+              <NavLink key={to} to={to} onClick={() => setOpen(false)} className={({ isActive }) => clsx('flex min-h-[64px] flex-col justify-center gap-2 rounded-2xl border border-line bg-surface p-3 text-sm font-semibold', isActive && 'border-accent-text text-accent-text')}>
+                <Icon size={20} aria-hidden />{label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="mt-5 flex items-center justify-between border-t border-line pt-3"><span className="text-xs text-muted">Connection</span><SyncBadge /></div>
+        </div>
+      </Sheet>
     </>
+  );
+}
+
+function MobileCaptureDock() {
+  const navigate = useNavigate();
+  return (
+    <div className="wos-capture-dock md:hidden" role="group" aria-label="Quick actions">
+      <button type="button" onClick={() => actions.openQuickAdd()} aria-label="Add task" className="wos-capture-plus"><Plus size={24} aria-hidden /></button>
+      <button type="button" onClick={() => actions.openQuickAdd()} className="min-w-0 flex-1 truncate py-3 text-left text-sm font-semibold text-muted">Capture a task or reminder...</button>
+      <button type="button" onClick={() => navigate('/search')} aria-label="Search tasks" className="wos-capture-search"><ArrowUpRight size={21} aria-hidden /></button>
+    </div>
   );
 }
 
@@ -285,15 +326,16 @@ export function Shell() {
   const isDesktop = useIsDesktop();
   useShortcuts();
   return (
-    <div className="flex h-dvh">
+    <div className="flex h-dvh flex-col md:flex-row">
       {isDesktop && <Sidebar />}
-      <main id="main" className="min-w-0 flex-1 overflow-y-auto scroll-thin" tabIndex={-1}>
+      {!isDesktop && <MobileNav />}
+      <main id="main" className="wos-main min-h-0 min-w-0 flex-1 overflow-y-auto scroll-thin" tabIndex={-1}>
         <Banners />
-        <div className="safe-top mx-auto max-w-3xl px-4 pb-36 md:pb-12">
+        <div className="wos-content mx-auto max-w-4xl px-4 pb-36 md:px-8 md:pb-12">
           <Outlet />
         </div>
       </main>
-      {!isDesktop && <BottomNav />}
+      {!isDesktop && <MobileCaptureDock />}
       <QuickAdd />
       <TaskSheet />
       <ConflictDialog />
