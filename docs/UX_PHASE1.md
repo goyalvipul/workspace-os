@@ -6,6 +6,7 @@ This branch changes the presentation layer of Workspace OS. The Nori screenshots
 
 - New **Home** dashboard at `/home` using live existing tasks, completion status, inbox counts, projects and connected read-only calendar events.
 - New **All tasks** view at `/tasks`: search by title/description, filter scheduled/unscheduled, keep all existing task actions and subtasks.
+- Calendar: a new **Agenda** mode with spacious day cards, events, task checkboxes and add-task actions; Month and Week remain available.
 - Responsive shell: mobile scrollable top tabs, complete navigation sheet, persistent Quick Add dock and search. Refreshed desktop sidebar.
 - Warm, softly layered light and dark palettes, larger touch targets, rounded task/event cards and cleaner headers.
 - Settings → General → Home view now allows Home or All tasks. **Existing users' startup preference stays as-is** unless changed.
