@@ -201,7 +201,7 @@ export function CalendarPage() {
       {ev.isLoading ? (
         <Spinner />
       ) : mode === 'agenda' ? (
-        <div className="space-y-4" aria-label="Calendar agenda">
+        <div className="space-y-4" role="region" aria-label="Calendar agenda">
           {rangeDays(range.start, range.end)
             .filter((d) => {
               const b = byDay.get(d);
