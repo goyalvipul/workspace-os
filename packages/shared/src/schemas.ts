@@ -337,7 +337,7 @@ export const preferenceSchemas = {
   'dates.detect': z.boolean(),
   'dates.nextWeekStart': z.number().int().min(0).max(6),
   'dates.weekendDay': z.union([z.literal(6), z.literal(0)]),
-  'general.homeView': z.enum(['today', 'inbox', 'upcoming', 'calendar', 'browse']),
+  'general.homeView': z.enum(['home', 'today', 'tasks', 'inbox', 'upcoming', 'calendar', 'browse']),
   'sound.completeTone': z.enum(['off', 'chime', 'pop', 'ding']),
   'swipe.right': swipeAction,
   'swipe.left': swipeAction,
