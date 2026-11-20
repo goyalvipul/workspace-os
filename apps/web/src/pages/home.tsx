@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Check, CircleHelp, Inbox, LayoutGrid, Plus, Sparkles } from 'lucide-react';
+import { ArrowRight, CalendarDays, Check, Inbox, LayoutGrid, Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { addDays, compareTasks, formatLongDate } from '@wos/shared';
@@ -142,11 +142,6 @@ export function HomePage() {
           </Link>
         )}
       </section>
-      <div className="flex flex-wrap items-center gap-2 pb-1 text-xs text-muted">
-        <Inbox size={14} aria-hidden /> Quick capture stays available from the bottom bar.
-        <span aria-hidden>·</span><Sparkles size={14} aria-hidden /> No features have been removed.
-        <Link to="/settings" className="ml-auto inline-flex items-center gap-1 underline"><CircleHelp size={14} aria-hidden /> Preferences</Link>
-      </div>
     </div>
   );
 }
