@@ -88,7 +88,7 @@ export function CalendarPage() {
   const today = useToday();
   const tz = useTz();
   const weekStart = useWeekStart();
-  const [mode, setMode] = useState<'month' | 'week'>('month');
+  const [mode, setMode] = useState<'agenda' | 'month' | 'week'>('agenda');
   const [cursor, setCursor] = useState(startOfMonth(today));
   const [selected, setSelected] = useState<string>(today);
   const all = useAllTasks();
@@ -97,7 +97,7 @@ export function CalendarPage() {
   const online = useStore((s) => s.online);
 
   const weekFirst = startOfWeek(selected, weekStart);
-  const range = mode === 'month' ? { start: startOfWeek(startOfMonth(cursor), weekStart), end: addDays(startOfWeek(endOfMonth(cursor), weekStart), 6) } : { start: weekFirst, end: addDays(weekFirst, 6) };
+  const range = mode !== 'week' ? { start: startOfWeek(startOfMonth(cursor), weekStart), end: addDays(startOfWeek(endOfMonth(cursor), weekStart), 6) } : { start: weekFirst, end: addDays(weekFirst, 6) };
   const ev = useCalendarEvents(range.start, range.end);
 
   const byDay = useMemo(() => {
@@ -130,10 +130,10 @@ export function CalendarPage() {
   const anyProblem = items.some((c) => c.isSelected && (c.syncHealth === 'reauth_required' || c.syncHealth === 'error'));
   const day = byDay.get(selected);
   const move = (n: number) => {
-    if (mode === 'month') setCursor(startOfMonth(addDays(endOfMonth(cursor), n > 0 ? 1 : -1)));
+    if (mode !== 'week') setCursor(startOfMonth(addDays(endOfMonth(cursor), n > 0 ? 1 : -1)));
     else setSelected(addDays(selected, 7 * n));
   };
-  const { y, m } = parseDate(mode === 'month' ? cursor : selected);
+  const { y, m } = parseDate(mode === 'week' ? selected : cursor);
 
   return (
     <>
@@ -142,13 +142,15 @@ export function CalendarPage() {
         subtitle={`${monthName(m)} ${y}`}
         right={
           <>
-            <Segmented label="Calendar layout" value={mode} onChange={setMode} options={[{ value: 'month', label: 'Month' }, { value: 'week', label: 'Week' }]} />
             <IconButton label="Sync calendars now" onClick={sync} disabled={!online}>
               <RefreshCw size={18} />
             </IconButton>
           </>
         }
       />
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <Segmented label="Calendar layout" value={mode} onChange={setMode} options={[{ value: 'agenda', label: 'Agenda' }, { value: 'month', label: 'Month' }, { value: 'week', label: 'Week' }]} />
+      </div>
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <IconButton label="Previous" onClick={() => move(-1)}>
@@ -198,6 +200,31 @@ export function CalendarPage() {
 
       {ev.isLoading ? (
         <Spinner />
+      ) : mode === 'agenda' ? (
+        <div className="space-y-4" aria-label="Calendar agenda">
+          {rangeDays(range.start, range.end)
+            .filter((d) => {
+              const b = byDay.get(d);
+              return d === selected || d === today || !!b?.tasks.length || !!b?.events.length;
+            })
+            .map((d) => {
+              const b = byDay.get(d);
+              return (
+                <section key={d} className="wos-panel p-4" aria-label={formatLongDate(d)}>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="flex items-center gap-2 font-bold">
+                      <span className={clsx('inline-flex h-9 w-9 items-center justify-center rounded-full text-sm', d === today ? 'bg-accent text-accent-fg' : 'bg-surface2')}>{parseDate(d).d}</span>
+                      {formatLongDate(d)} {d === today && <span className="text-xs font-medium text-accent-text">Today</span>}
+                    </h2>
+                    <Button size="sm" variant="ghost" onClick={() => actions.openQuickAdd({ date: d })}>+ Add</Button>
+                  </div>
+                  {b?.events.length ? <EventBlock events={b.events} /> : null}
+                  {b?.tasks.length ? <div className="mt-2"><TaskList tasks={b.tasks} showProject /></div> : null}
+                  {!b?.events.length && !b?.tasks.length && <p className="px-1 py-2 text-sm text-muted">Nothing scheduled for this day.</p>}
+                </section>
+              );
+            })}
+        </div>
       ) : mode === 'month' ? (
         <MonthGrid month={cursor} byDay={byDay} today={today} weekStart={weekStart} selected={selected} onSelect={setSelected} />
       ) : (
@@ -223,7 +250,7 @@ export function CalendarPage() {
         </div>
       )}
 
-      <section className="mt-5" aria-label={`Details for ${formatLongDate(selected)}`}>
+      {mode !== 'agenda' && <section className="mt-5" aria-label={`Details for ${formatLongDate(selected)}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold">{formatLongDate(selected)}</h2>
           <Button size="sm" variant="ghost" onClick={() => actions.openQuickAdd({ date: selected })}>
@@ -233,7 +260,7 @@ export function CalendarPage() {
         {day?.events.length ? <div className="mt-1"><EventBlock events={day.events} /></div> : null}
         {day?.tasks.length ? <TaskList tasks={day.tasks} showProject /> : null}
         {!day?.events.length && !day?.tasks.length && <p className="py-4 text-sm text-muted">Nothing on this day.</p>}
-      </section>
+      </section>}
     </>
   );
 }
