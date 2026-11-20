@@ -17,7 +17,7 @@ export function AllTasksPage() {
   const tasks = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
     return all
-      .filter((t) => t.status === 'open' && !t.deletedAt && !t.parentTaskId)
+      .filter((t) => t.status === 'open' && !t.deletedAt)
       .filter((t) => filter === 'all' || (filter === 'scheduled' ? !!(t.dueDate || t.scheduledDate) : !(t.dueDate || t.scheduledDate)))
       .filter((t) => !term || t.title.toLocaleLowerCase().includes(term) || t.description.toLocaleLowerCase().includes(term))
       .sort(compareTasks('due'));
@@ -40,7 +40,7 @@ export function AllTasksPage() {
         <span className="text-sm text-muted">{tasks.length} open</span>
       </div>
       <div className="wos-panel p-3">
-        {tasks.length ? <TaskList tasks={tasks} showProject showDate nested /> : (
+        {tasks.length ? <TaskList tasks={tasks} showProject showDate /> : (
           <div className="flex flex-col items-center px-5 py-10 text-center">
             <span className="wos-empty-icon"><ListTodo size={26} aria-hidden /></span>
             <p className="mt-3 font-semibold">{search ? 'No matching tasks' : 'No tasks in this view'}</p>
