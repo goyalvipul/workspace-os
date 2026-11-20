@@ -296,6 +296,7 @@ select {
 .wos-page-header h1 { font-weight: 820; letter-spacing: -.035em; }
 .wos-events { border-radius: 19px; background: var(--bg); }
 @media (min-width: 768px) {
+  .wos-mobile-header, .wos-capture-dock { display: none; }
   .wos-home { padding-top: 20px; }
   .wos-hero { padding: 32px; }
 }
