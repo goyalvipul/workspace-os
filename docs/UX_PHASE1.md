@@ -64,3 +64,26 @@ Keep the volumes for repeat tests; only use `down -v` if you explicitly want to 
 ## Decision before merge
 
 Do not merge to `main` until `pnpm check`, unit and E2E tests pass and the mobile preview is accepted. On production, existing color and startup settings remain user-configurable. Change Settings → Appearance to Light for the cream/peach visual direction in the screenshots.
+
+## Rebuilding your existing Workspace OS instance (uses your real database)
+
+If you intentionally choose to deploy this feature branch into your existing production instance, **make a verified backup before rebuilding**. This is different from the isolated preview above.
+
+The old `compose.yaml` mounted host `apps/web/dist` and `apps/server/dist` directories over the freshly built files in the image. As a result, `docker compose up -d --build --force-recreate` could report success but continue serving old compiled code. That issue is fixed on this feature branch by removing **only the two build-output mounts**. The existing `data:/data` and `backups:/backups` binds remain unchanged.
+
+After bringing down the latest commit of this branch into the checkout that houses your `.env` and persistent database directories:
+
+```bash
+git branch --show-current
+git pull --ff-only origin feat/nori-inspired-ux-phase1
+docker compose config --services
+docker compose up -d --build --force-recreate
+docker compose ps
+docker inspect workspace-os --format '{{range .Mounts}}{{println .Source "->" .Destination}}{{end}}'
+```
+
+The mount list should show only `/data` and `/backups` and no `/app/web` or `/app/dist` entries. The packaged frontend is then served from the new image.
+
+If the old app still appears on an iPhone or PWA, fully close/reopen it, accept the in-app update prompt if shown, or refresh the browser cache. In Settings → General, choose **Home dashboard** as the startup view: existing preferences still default to their prior view until changed.
+
+Prefer the isolated preview rather than testing unverified work against the production database.
