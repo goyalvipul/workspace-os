@@ -10,6 +10,8 @@ import { startSync } from './lib/sync';
 import { ActivityPage } from './pages/activity';
 import { LoginPage, SetupPage } from './pages/auth';
 import { CalendarPage } from './pages/calendar';
+import { HomePage } from './pages/home';
+import { AllTasksPage } from './pages/tasks';
 import { BrowsePage, FilterTasksPage, LabelsPage, LabelTasksPage, SearchPage, TemplatesPage } from './pages/organize';
 import { ProjectPage } from './pages/project';
 import { SettingsPage } from './pages/settings';
@@ -77,6 +79,8 @@ export function App() {
         <Route path="/setup" element={<SetupPage />} />
         <Route element={<Gate />}>
           <Route index element={<HomeRedirect />} />
+          <Route path="home" element={<HomePage />} />
+          <Route path="tasks" element={<AllTasksPage />} />
           <Route path="inbox" element={<InboxPage />} />
           <Route path="today" element={<TodayPage />} />
           <Route path="upcoming" element={<UpcomingPage />} />
