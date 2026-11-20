@@ -52,7 +52,7 @@ export function General() {
     <>
       <Row label="Home view" hint="What opens when you launch the app. Saved to your account, so every device follows it.">
         <Select aria-label="Home view" className="w-36" value={String(prefs['general.homeView'])} onChange={(e) => set('general.homeView', e.target.value)}>
-          <option value="today">Today</option><option value="inbox">Inbox</option><option value="upcoming">Upcoming</option><option value="calendar">Calendar</option><option value="browse">Browse</option>
+          <option value="home">Home dashboard</option><option value="tasks">All tasks</option><option value="today">Today</option><option value="inbox">Inbox</option><option value="upcoming">Upcoming</option><option value="calendar">Calendar</option><option value="browse">Browse</option>
         </Select>
       </Row>
       <Row label="Detect dates in task names" hint='Turns "tomorrow 5pm" or "every monday" typed in Quick Add into a due date.'>
