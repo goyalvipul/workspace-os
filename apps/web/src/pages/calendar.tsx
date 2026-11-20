@@ -205,7 +205,7 @@ export function CalendarPage() {
           {rangeDays(range.start, range.end)
             .filter((d) => {
               const b = byDay.get(d);
-              return d === selected || d === today || !!b?.tasks.length || !!b?.events.length;
+              return d === startOfMonth(cursor) || d === selected || d === today || !!b?.tasks.length || !!b?.events.length;
             })
             .map((d) => {
               const b = byDay.get(d);
