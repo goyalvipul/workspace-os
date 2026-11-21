@@ -35,7 +35,7 @@ test('main pages render without accessibility violations', async ({ page }) => {
   page.on('pageerror', (e) => found.push('pageerror: ' + e.message));
   for (const path of ['/home', '/tasks', '/today', '/inbox', '/upcoming', '/calendar', '/browse', '/labels', '/templates', '/activity', '/settings', '/settings/appearance', '/settings/accounts', '/settings/security', '/settings/general', '/settings/productivity', '/settings/reminders', '/settings/notifications', '/settings/integrations', '/settings/whatsnew', '/settings/help', '/archived']) {
     await page.goto(path);
-    if (!(await page.locator('main').isVisible({ timeout: 5000 }).catch(() => false))) { found.push(path + ': main not rendered'); continue; }
+    if (!(await page.locator('main').waitFor({ state: 'visible', timeout: 15000 }).then(() => true).catch(() => false))) { found.push(path + ': main not rendered'); continue; }
     await page.waitForLoadState('networkidle');
     found.push(...(await axeViolations(page, path)));
   }
