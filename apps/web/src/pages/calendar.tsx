@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, RefreshCw, TriangleAlert } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { addDays, endOfMonth, formatLongDate, monthName, parseDate, rangeDays, startOfMonth, startOfWeek, type CalendarEventDTO, type TaskDTO, WEEKDAY_NAMES, compareTasks } from '@wos/shared';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { addDays, endOfMonth, formatLongDate, isValidDateStr, monthName, parseDate, rangeDays, startOfMonth, startOfWeek, type CalendarEventDTO, type TaskDTO, WEEKDAY_NAMES, compareTasks } from '@wos/shared';
 import { EventBlock } from '../components/EventRow';
 import { PageHeader } from '../components/PageHeader';
 import { TaskList, PRIORITY_COLOR } from '../components/TaskRow';
@@ -88,9 +88,13 @@ export function CalendarPage() {
   const today = useToday();
   const tz = useTz();
   const weekStart = useWeekStart();
+  const [params] = useSearchParams();
+  const requested = params.get('date');
+  const initialDate = requested && isValidDateStr(requested) ? requested : today;
   const [mode, setMode] = useState<'agenda' | 'month' | 'week'>('agenda');
-  const [cursor, setCursor] = useState(startOfMonth(today));
-  const [selected, setSelected] = useState<string>(today);
+  const [cursor, setCursor] = useState(startOfMonth(initialDate));
+  const [selected, setSelected] = useState<string>(initialDate);
+  useEffect(() => { setCursor(startOfMonth(initialDate)); setSelected(initialDate); }, [initialDate]);
   const all = useAllTasks();
   const hidden = useStore((s) => s.prefs['calendar.hiddenSources'] as string[]);
   const cals = useExternalCalendars();
