@@ -11,6 +11,9 @@ on:
       - "tests/**"
       - "playwright.config.ts"
       - "pnpm-lock.yaml"
+      - "Dockerfile"
+      - "scripts/gen-icons.mjs"
+      - ".github/workflows/ux-checks.yml"
   workflow_dispatch:
 
 concurrency:
@@ -39,6 +42,8 @@ jobs:
         run: pnpm test
       - name: Build web and API
         run: pnpm build
+      - name: Build Docker image (catches missing build-stage sources)
+        run: docker build --target build --file Dockerfile .
 
   e2e:
     runs-on: ubuntu-latest
