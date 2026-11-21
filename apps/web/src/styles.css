@@ -221,12 +221,21 @@ select {
   border-radius: 999px; font-size: 14px; font-weight: 650; transition: background .16s ease;
 }
 .wos-mobile-pill-active { background: var(--accent); color: var(--accent-fg); border-radius: 14px 24px 5px 14px; }
-/* The footer is a flex child of the full-height app. Unlike position:fixed,
-   it follows the actual usable mobile viewport on iOS Safari/PWA and never
-   floats over task content or leaves a large blank area below. */
+/* iOS home-screen PWAs can report 100dvh shorter than their fullscreen
+   layout viewport. Fill the larger viewport only in installed standalone mode:
+   Safari's ordinary tab UI must still use dynamic 100dvh so browser chrome
+   never covers the capture controls. The footer stays in flex flow, below main. */
+@media (display-mode: standalone) and (max-width: 767px) {
+  .wos-app-shell {
+    height: max(100vh, 100dvh);
+  }
+}
+/* The capture controls are in normal flex flow, not overlaid on task content.
+   The footer ends at the shell's real bottom with only the device safe area
+   beneath the pill. Do not add a second safe-area inset here. */
 .wos-capture-footer {
   position: relative; z-index: 30; flex: 0 0 auto;
-  padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 16px max(8px, env(safe-area-inset-bottom, 0px));
   background: var(--bg);
 }
 .wos-capture-dock {
