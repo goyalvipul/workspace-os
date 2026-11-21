@@ -28,6 +28,7 @@ function SectionHeading({ title, to, linkLabel = 'See all', tone = 'peach' }: { 
 }
 
 function DashboardCustomize({ order, update, onClose }: { order: Widget[]; update: (order: Widget[]) => void; onClose: () => void }) {
+  const visibleFirst = [...order, ...defaultWidgets.filter((id) => !order.includes(id))];
   const toggle = (name: Widget) => update(order.includes(name) ? order.filter((id) => id !== name) : [...order, name]);
   const move = (name: Widget, step: -1 | 1) => {
     const i = order.indexOf(name);
@@ -43,7 +44,7 @@ function DashboardCustomize({ order, update, onClose }: { order: Widget[]; updat
       <div className="overflow-y-auto p-5">
         <p className="mb-5 text-sm text-muted">Choose which sections appear and their order. Your preferences sync between devices.</p>
         <div className="space-y-2">
-          {defaultWidgets.map((id) => {
+          {visibleFirst.map((id) => {
             const active = order.includes(id);
             return (
               <div key={id} className="flex min-h-16 items-center gap-2 rounded-2xl border border-line bg-surface p-3">
