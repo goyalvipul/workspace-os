@@ -48,19 +48,30 @@ export function useKeyboardInset(active: boolean): { bottom: number; height: num
       return;
     }
     const update = () => {
+      const focused = document.activeElement;
+      // iOS can reserve >100px for browser/PWA chrome without opening a keyboard.
+      // Only lift a sheet when a genuine text editor is focused AND the visual
+      // viewport is substantially smaller than the layout viewport.
+      const editingText = focused instanceof HTMLTextAreaElement ||
+        (focused instanceof HTMLInputElement && !['button', 'checkbox', 'radio', 'file', 'color', 'range', 'submit', 'reset', 'hidden', 'date', 'time'].includes(focused.type)) ||
+        (focused instanceof HTMLElement && focused.isContentEditable);
       const bottom = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
-      // Ignore small differences (browser toolbars); a keyboard is well over 100 px.
+      const keyboardOpen = editingText && bottom > 150;
       setState((prev) => {
-        const next = { bottom: bottom > 100 ? bottom : 0, height: bottom > 100 ? Math.round(vv.height) : null };
+        const next = { bottom: keyboardOpen ? bottom : 0, height: keyboardOpen ? Math.round(vv.height) : null };
         return prev.bottom === next.bottom && prev.height === next.height ? prev : next;
       });
     };
     update();
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
+    document.addEventListener('focusin', update);
+    document.addEventListener('focusout', update);
     return () => {
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
+      document.removeEventListener('focusin', update);
+      document.removeEventListener('focusout', update);
     };
   }, [active]);
   return state;
