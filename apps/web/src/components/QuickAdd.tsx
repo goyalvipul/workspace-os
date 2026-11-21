@@ -115,10 +115,10 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
         e.preventDefault();
         submit(false);
       }}
-      className="flex min-h-0 flex-col gap-3 overflow-y-auto p-4"
+      className="wos-quick-add flex min-h-0 flex-col gap-4 overflow-y-auto p-5"
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">Quick add</h2>
+        <div><h2 className="text-xl font-extrabold">Add a task</h2><p className="text-xs text-muted">Capture it now. Organize it later.</p></div>
         <IconButton label="Close" type="button" onClick={() => actions.closeQuickAdd()}>
           <X size={20} />
         </IconButton>
@@ -136,7 +136,7 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
             submit(true);
           }
         }}
-        className="min-h-12 text-base"
+        className="min-h-14 text-base"
       />
       {tokens.length > 0 && !manualDate && (
         <div className="flex flex-wrap gap-2" aria-label="Recognised from your text">
