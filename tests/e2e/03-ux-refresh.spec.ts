@@ -40,3 +40,36 @@ test('mobile navigation sheet retains access to Inbox, settings and existing pag
   await page.getByRole('button', { name: 'Add task', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });
+
+test('dashboard widgets can be hidden, restored and reordered', async ({ page }) => {
+  await page.goto('/home');
+  await expect(page.getByRole('heading', { name: 'Your week' })).toBeVisible();
+  await page.getByRole('button', { name: 'Customize' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Hide Your week' }).click();
+  await expect(page.getByRole('heading', { name: 'Your week' })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Show Your week' }).click();
+  await expect(page.getByRole('heading', { name: 'Your week' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Restore default sections' }).click();
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('link', { name: /open tasks/ }).first().click();
+  await expect(page).toHaveURL(/\/calendar\?date=/);
+});
+
+test('all tasks can be grouped, sorted and collapsed without losing actions', async ({ page }, info) => {
+  const title = `Grouped task ${info.project.name}`;
+  await quickAdd(page, `${title} today`);
+  await page.goto('/tasks');
+  await page.getByLabel('Filter tasks by name').fill(title);
+  const group = page.getByRole('region', { name: 'Today' });
+  await expect(group.getByRole('button', { name: `Open ${title}` })).toBeVisible();
+  await group.getByRole('button', { name: /Today/ }).click();
+  await expect(group.getByRole('button', { name: `Open ${title}` })).toBeHidden();
+  await group.getByRole('button', { name: /Today/ }).click();
+  await page.getByLabel('Sort all tasks by').selectOption('priority');
+  await expect(group.getByRole('button', { name: `Open ${title}` })).toBeVisible();
+  await page.getByLabel('Group tasks by').selectOption('project');
+  await expect(page.getByRole('button', { name: `Open ${title}` })).toBeVisible();
+  await page.getByLabel('Group tasks by').selectOption('schedule');
+  await page.getByLabel('Sort all tasks by').selectOption('due');
+});
