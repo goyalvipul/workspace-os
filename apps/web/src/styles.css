@@ -4,6 +4,8 @@
 html {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+  /* Paint WebKit's otherwise inaccessible PWA bottom gutter consistently. */
+  background: var(--bg);
 }
 
 :root,
@@ -227,7 +229,10 @@ select {
    never covers the capture controls. The footer stays in flex flow, below main. */
 @media (display-mode: standalone) and (max-width: 767px) {
   .wos-app-shell {
-    height: max(100vh, 100dvh);
+    /* On affected iOS Home Screen PWAs 100dvh starts shorter by the
+       status-bar inset. 100lvh uses the full display from first paint.
+       Normal Safari tabs continue using Tailwind's h-dvh. */
+    height: 100lvh;
   }
 }
 /* The capture controls are in normal flex flow, not overlaid on task content.
