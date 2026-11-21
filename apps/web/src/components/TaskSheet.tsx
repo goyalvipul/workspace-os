@@ -58,8 +58,14 @@ function TaskDetail({ id }: { id: string }) {
   useLayoutEffect(() => {
     const element = titleRef.current;
     if (!element) return;
-    element.style.height = 'auto';
-    element.style.height = `${element.scrollHeight + 2}px`;
+    const resize = () => {
+      element.style.height = 'auto';
+      element.style.height = `${element.scrollHeight + 2}px`;
+    };
+    resize();
+    // Rotating the phone or changing the sheet width can re-wrap the same title.
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
   }, [title]);
   useEffect(() => {
     if (!editDesc) setDesc(task.description);
