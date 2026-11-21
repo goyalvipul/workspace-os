@@ -328,7 +328,7 @@ export function Shell() {
   const isDesktop = useIsDesktop();
   useShortcuts();
   return (
-    <div className="flex h-dvh flex-col md:flex-row">
+    <div className="wos-app-shell flex h-dvh flex-col md:flex-row">
       {isDesktop && <Sidebar />}
       {!isDesktop && <MobileNav />}
       <main id="main" className="wos-main min-h-0 min-w-0 flex-1 overflow-y-auto scroll-thin" tabIndex={-1}>
