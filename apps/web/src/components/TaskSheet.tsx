@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DOMPurify from 'dompurify';
 import { Archive, Copy, Flag, MoreHorizontal, Plus, Send, Trash2, X, Clock, Target, CalendarClock } from 'lucide-react';
 import { marked } from 'marked';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { buildDue, formatDateLabel, localTimeOf, sortByPosition, type CommentDTO, type TaskDTO } from '@wos/shared';
 import { api, errorMessage } from '../lib/api';
 import { CREATOROS_KEY, useCreatoros } from '../lib/creatoros';
@@ -46,12 +46,21 @@ function TaskDetail({ id }: { id: string }) {
   const today = useToday();
   const { toggle, dialog } = useToggleTask();
   const [title, setTitle] = useState(task.title);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
   const [desc, setDesc] = useState(task.description);
   const [editDesc, setEditDesc] = useState(false);
   const [subTitle, setSubTitle] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => setTitle(task.title), [task.title]);
+  // Keep the entire task title readable, even when it wraps to many lines on a phone.
+  // The textarea stays editable, but grows to its content instead of clipping at rows={1}.
+  useLayoutEffect(() => {
+    const element = titleRef.current;
+    if (!element) return;
+    element.style.height = 'auto';
+    element.style.height = `${element.scrollHeight + 2}px`;
+  }, [title]);
   useEffect(() => {
     if (!editDesc) setDesc(task.description);
   }, [task.description, editDesc]);
@@ -145,9 +154,10 @@ function TaskDetail({ id }: { id: string }) {
       </div>
 
       <div className="min-h-0 flex-1 space-y-5 overflow-auto p-4 scroll-thin sm:p-5">
-        <div className="flex items-start gap-1">
+        <div className="wos-task-title-row flex min-w-0 items-start gap-2">
           <TaskCheckbox task={task} onToggle={() => toggle(task)} />
           <Textarea
+            ref={titleRef}
             aria-label="Task title"
             rows={1}
             value={title}
@@ -160,7 +170,7 @@ function TaskDetail({ id }: { id: string }) {
                 (e.target as HTMLTextAreaElement).blur();
               }
             }}
-            className={clsx('min-h-11 resize-none border-transparent bg-transparent text-lg font-semibold', task.status === 'completed' && 'text-muted line-through')}
+            className={clsx('wos-task-title min-w-0 flex-1 resize-none overflow-hidden border-transparent bg-transparent px-2 py-2 text-lg font-semibold leading-snug', task.status === 'completed' && 'text-muted line-through')}
           />
         </div>
 
