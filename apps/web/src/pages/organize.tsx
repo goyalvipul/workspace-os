@@ -36,7 +36,7 @@ export function SearchPage() {
       <PageHeader title="Search" />
       <div className="relative">
         <SearchIcon size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden />
-        <Input autoFocus type="search" aria-label="Search tasks, projects and labels" placeholder="Search tasks, projects, labels" value={q} onChange={(e) => setQ(e.target.value)} className="min-h-12 pl-10" />
+        <Input autoFocus type="search" aria-label="Search tasks, projects and labels" placeholder="Search tasks, projects, labels" value={q} onChange={(e) => setQ(e.target.value)} className="wos-search-input min-h-12 pl-10" />
       </div>
       <div className="my-3 flex items-center justify-between text-sm">
         <span className="text-muted">{dq ? `${results.length} task${results.length === 1 ? '' : 's'}` : 'Type to search'}{!online && ' (offline: searching this device)'}</span>
@@ -64,11 +64,11 @@ export function BrowsePage() {
     for (const t of all) if (t.projectId && t.status === 'open' && !t.parentTaskId) m.set(t.projectId, (m.get(t.projectId) ?? 0) + 1);
     return m;
   }, [all]);
-  const row = 'flex min-h-12 items-center gap-3 rounded-lg px-3 hover:bg-surface2';
+  const row = 'flex min-h-[78px] flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface px-4 font-semibold hover:bg-surface2';
   return (
     <>
       <PageHeader title="Browse" right={<Link to="/settings" aria-label="Settings" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface2"><Settings size={20} /></Link>} />
-      <nav aria-label="Browse" className="space-y-0.5">
+      <nav aria-label="Browse" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Link to="/search" className={row}><SearchIcon size={20} aria-hidden /> Search</Link>
         <Link to="/inbox" className={row}><Inbox size={20} aria-hidden /> Inbox <span className="ml-auto text-sm text-muted">{inbox || ''}</span></Link>
         <Link to="/calendar" className={row}><CalendarDays size={20} aria-hidden /> Calendar</Link>
@@ -77,8 +77,8 @@ export function BrowsePage() {
         <Link to="/activity" className={row}><Activity size={20} aria-hidden /> Activity &amp; productivity</Link>
         <Link to="/archived" className={row}><Archive size={20} aria-hidden /> Archived tasks</Link>
       </nav>
-      <div className="mb-1 mt-5 flex items-center justify-between px-3">
-        <h2 className="text-sm font-semibold">Projects</h2>
+      <div className="mb-3 mt-7 flex items-center justify-between">
+        <h2 className="wos-section-label wos-section-mint">Projects</h2>
         <IconButton label="Add project" onClick={() => setAdding(true)}><Plus size={20} /></IconButton>
       </div>
       {adding && (
@@ -88,9 +88,9 @@ export function BrowsePage() {
           <Button type="button" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button>
         </form>
       )}
-      <ul className="space-y-0.5">
+      <ul className="grid gap-2 sm:grid-cols-2">
         {flattenTree(tree).map((n, i) => (
-          <li key={n.project.id} className="flex items-center">
+          <li key={n.project.id} className="flex min-w-0 items-center">
             <Link to={`/project/${n.project.id}`} className={clsx(row, 'min-w-0 flex-1')} style={{ paddingLeft: 12 + n.depth * 18 }}>
               <Hash size={18} style={{ color: n.project.color }} aria-hidden /> <span className="truncate">{n.project.name}</span>
               {n.project.favorite && <Star size={12} className="text-warn" fill="currentColor" aria-label="Favorite" />}
@@ -145,7 +145,7 @@ export function LabelsPage() {
           {labels.map((l) => {
             const n = all.filter((t) => t.status === 'open' && t.labelIds.includes(l.id)).length;
             return (
-              <li key={l.id} className="flex min-h-12 items-center gap-3 border-b border-line/60 px-1">
+              <li key={l.id} className="flex min-h-14 items-center gap-3 border-b border-line/60 px-3">
                 <Tag size={18} style={{ color: l.color }} aria-hidden />
                 {edit === l.id ? (
                   <form className="flex flex-1 gap-2" onSubmit={(e) => { e.preventDefault(); if (editName.trim()) actions.updateLabel(l.id, { name: editName.trim() }); setEdit(null); }}>
@@ -340,7 +340,7 @@ export function TemplatesPage() {
   const [create, setCreate] = useState(false);
   const [del, setDel] = useState<TemplateDTO | null>(null);
   const list = templates.filter((t) => (tab === 'builtin' ? t.isBuiltin : !t.isBuiltin));
-  const tint = ['#3a2b26', '#26332f', '#2a2f3d', '#352a39'];
+  const tint = ['#ffc88e', '#c8f3e2', '#f0d4fb', '#fff5a4'];
   return (
     <>
       <PageHeader title="Templates" back="/browse" right={<Button size="sm" variant="primary" onClick={() => setCreate(true)}><Plus size={14} aria-hidden /> New</Button>} />
@@ -348,7 +348,7 @@ export function TemplatesPage() {
       {!list.length && <EmptyState title={tab === 'mine' ? 'You have no templates yet' : 'No built-in templates'} body="Create one from a list of tasks, then apply it to start a new project in one tap." art={false}><Button onClick={() => setCreate(true)}>Create a template</Button></EmptyState>}
       <ul className="grid gap-3 sm:grid-cols-2">
         {list.map((t, i) => (
-          <li key={t.id} className="flex flex-col rounded-xl border border-line p-4" style={{ background: `color-mix(in srgb, ${tint[i % tint.length]} 55%, var(--surface))` }}>
+          <li key={t.id} className="flex flex-col rounded-[24px] border border-line bg-surface p-4" style={{ borderTop: `5px solid ${tint[i % tint.length]}` }}>
             <h2 className="font-semibold">{t.name}</h2>
             <p className="mt-1 flex-1 text-sm text-muted">{t.description}</p>
             <p className="mt-2 text-xs text-muted">{countTasks(t.body)} tasks</p>
