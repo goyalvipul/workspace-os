@@ -108,6 +108,13 @@ test('mobile task details show the full title and keep metadata below the editor
   await page.getByLabel('Filter tasks by name').fill('Fix mobile UI and verify reminders');
   await page.getByRole('button', { name: `Open ${title}` }).click();
 
+  // An unopened keyboard must not lift the sheet off the bottom of the phone.
+  const dialog = page.getByRole('dialog');
+  const dialogBox = await dialog.boundingBox();
+  const viewportHeight = await page.evaluate(() => window.innerHeight);
+  expect(dialogBox).not.toBeNull();
+  if (dialogBox) expect(dialogBox.y + dialogBox.height).toBeGreaterThanOrEqual(viewportHeight - 4);
+
   const editor = page.getByRole('textbox', { name: 'Task title' });
   await expect(editor).toHaveValue(title);
   const measurements = await editor.evaluate((element) => {
