@@ -75,3 +75,27 @@ test('all tasks can be grouped, sorted and collapsed without losing actions', as
   await page.getByLabel('Group tasks by').selectOption('schedule');
   await page.getByLabel('Sort all tasks by').selectOption('due');
 });
+
+test('mobile capture bar stays docked beneath the scroll area and not over task cards', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'mobile-only layout assertion');
+  await page.goto('/home');
+  const dock = page.locator('.wos-capture-dock');
+  const footer = page.locator('.wos-capture-footer');
+  await expect(dock).toBeVisible();
+  const main = await page.locator('#main').boundingBox();
+  const footerBox = await footer.boundingBox();
+  const dockBox = await dock.boundingBox();
+  expect(main).not.toBeNull();
+  expect(footerBox).not.toBeNull();
+  expect(dockBox).not.toBeNull();
+  if (!main || !footerBox || !dockBox) return;
+  // The full-height app reserves space for the dock: the scrollable tasks end above it.
+  expect(main.y + main.height).toBeLessThanOrEqual(footerBox.y + 2);
+  expect(dockBox.y).toBeGreaterThanOrEqual(footerBox.y);
+  expect(dockBox.y + dockBox.height).toBeLessThanOrEqual(footerBox.y + footerBox.height + 1);
+  const viewportHeight = await page.evaluate(() => window.innerHeight);
+  expect(footerBox.y + footerBox.height).toBeGreaterThanOrEqual(viewportHeight - 4);
+  expect(footerBox.y + footerBox.height).toBeLessThanOrEqual(viewportHeight + 4);
+  await dock.getByRole('button', { name: 'Add task' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+});
