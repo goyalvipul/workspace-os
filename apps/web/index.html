@@ -3,14 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
-    <meta name="theme-color" content="#1c1c1e" />
+    <meta name="theme-color" content="#f7f5ee" />
     <meta name="color-scheme" content="dark light" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Workspace" />
-    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/workspace-favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/workspace-favicon-32.png" />
+    <link rel="icon" type="image/svg+xml" href="/icons/workspace.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/workspace-apple-touch.png" />
     <title>Workspace OS</title>
     <script>
       // apply the saved theme before first paint (no flash)
@@ -18,7 +20,7 @@
         var t = localStorage.getItem('wos.theme') || 'dark';
         var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-        document.querySelector('meta[name=theme-color]').setAttribute('content', dark ? '#1c1c1e' : '#ffffff');
+        document.querySelector('meta[name=theme-color]').setAttribute('content', dark ? '#191c1a' : '#f7f5ee');
       } catch (e) {}
     </script>
   </head>

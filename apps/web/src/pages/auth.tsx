@@ -10,7 +10,7 @@ function Card({ title, children, sub }: { title: string; sub?: string; children:
     <main id="main" className="flex min-h-dvh items-center justify-center bg-bg p-4">
       <div className="w-full max-w-md rounded-[30px] border border-line bg-surface p-7 shadow-xl sm:p-9">
         <div className="mb-7 flex items-center gap-3">
-          <img src="/icons/icon-192.png" alt="" width={40} height={40} className="rounded-xl" />
+          <img src="/icons/workspace-192.png" alt="" width={40} height={40} className="rounded-xl" />
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">{title}</h1>
             {sub && <p className="text-sm text-muted">{sub}</p>}
