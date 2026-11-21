@@ -23,7 +23,7 @@ export function MonthGrid({ month, byDay, today, weekStart, selected, onSelect }
   const weeks = Array.from({ length: days.length / 7 }, (_, i) => days.slice(i * 7, i * 7 + 7));
   const heads = days.slice(0, 7).map((d) => WEEKDAY_NAMES[weekdayIdx(d)] as string);
   return (
-    <div role="grid" aria-label={`${monthName(parseDate(month).m)} ${parseDate(month).y}`} className="overflow-hidden rounded-xl border border-line">
+    <div role="grid" aria-label={`${monthName(parseDate(month).m)} ${parseDate(month).y}`} className="overflow-hidden rounded-[24px] border border-line bg-surface p-1">
       <div role="row" className="grid grid-cols-7 border-b border-line bg-surface text-center text-xs text-muted">
         {heads.map((h) => (
           <span key={h} role="columnheader" className="py-1.5">
@@ -46,7 +46,7 @@ export function MonthGrid({ month, byDay, today, weekStart, selected, onSelect }
               aria-label={`${formatLongDate(d)}: ${events.length} events, ${tasks.length} tasks`}
               aria-selected={selected === d}
               onClick={() => onSelect(d)}
-              className={clsx('min-h-[64px] border-b border-r border-line p-1 text-left align-top hover:bg-surface md:min-h-[92px]', selected === d && 'bg-surface')}
+              className={clsx('min-h-[64px] rounded-lg border-b border-r border-line p-1 text-left align-top hover:bg-surface2 md:min-h-[92px]', selected === d && 'bg-surface2 ring-1 ring-accent-text')}
             >
               <span className={clsx('mb-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs', d === today && 'bg-accent font-bold text-accent-fg', d !== today && !inMonth && 'text-muted')}>{parseDate(d).d}</span>
               <span className="hidden space-y-0.5 md:block">
@@ -236,7 +236,7 @@ export function CalendarPage() {
           {rangeDays(weekFirst, addDays(weekFirst, 6)).map((d) => {
             const b = byDay.get(d);
             return (
-              <button key={d} onClick={() => setSelected(d)} aria-pressed={selected === d} className={clsx('rounded-lg border border-line p-2 text-left text-xs', selected === d && 'bg-surface', d === today && 'border-accent-text')}>
+              <button key={d} onClick={() => setSelected(d)} aria-pressed={selected === d} className={clsx('rounded-2xl border border-line bg-surface p-3 text-left text-xs', selected === d && 'bg-surface2', d === today && 'border-accent-text')}>
                 <span className="mb-1 block font-semibold">{WEEKDAY_NAMES[weekdayIdx(d)]?.slice(0, 3)} {parseDate(d).d}</span>
                 {(b?.events ?? []).slice(0, 4).map((e) => (
                   <span key={e.id} className="mb-0.5 block truncate rounded px-1" style={{ background: `color-mix(in srgb, ${e.color} 22%, transparent)` }}>
