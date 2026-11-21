@@ -47,11 +47,13 @@ test('dashboard widgets can be hidden, restored and reordered', async ({ page })
   await page.getByRole('button', { name: 'Customize' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: 'Hide Your week' }).click();
+  await dialog.getByRole('button', { name: 'Close' }).click();
   await expect(page.getByRole('heading', { name: 'Your week' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Customize' }).click();
   await dialog.getByRole('button', { name: 'Show Your week' }).click();
-  await expect(page.getByRole('heading', { name: 'Your week' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Restore default sections' }).click();
   await dialog.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('heading', { name: 'Your week' })).toBeVisible();
   await page.getByRole('link', { name: /open tasks/ }).first().click();
   await expect(page).toHaveURL(/\/calendar\?date=/);
 });
