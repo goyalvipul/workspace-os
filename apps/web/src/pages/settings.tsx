@@ -38,10 +38,10 @@ export function SettingsPage() {
     return (
       <>
         <PageHeader title="Settings" back="/browse" />
-        <ul className="space-y-0.5">
+        <ul className="grid gap-3 sm:grid-cols-2">
           {SECTIONS.map((s) => (
             <li key={s.id}>
-              <Link to={`/settings/${s.id}`} className="flex min-h-14 items-center gap-3 rounded-lg px-3 hover:bg-surface2">
+              <Link to={`/settings/${s.id}`} className="wos-settings-tile flex min-h-[92px] items-center gap-3 rounded-[22px] border border-line bg-surface px-4 hover:bg-surface2">
                 <span className="text-muted" aria-hidden>{s.icon}</span>
                 <span className="flex-1"><span className="block">{s.label}</span><span className="block text-xs text-muted">{s.hint}</span></span>
                 <ChevronRight size={16} className="text-muted" aria-hidden />
@@ -56,7 +56,7 @@ export function SettingsPage() {
   return (
     <>
       <PageHeader title={current.label} back="/settings" />
-      <div className="max-w-xl space-y-5">
+      <div className="wos-settings-content wos-panel max-w-2xl space-y-5 p-4 sm:p-6">
         {section === 'profile' && <Profile />}
         {section === 'general' && <General />}
         {section === 'appearance' && <Appearance />}
