@@ -55,7 +55,7 @@ export function EventBlock({ events }: { events: CalendarEventDTO[] }) {
   if (!events.length) return null;
   const sorted = [...events].sort((a, b) => Number(b.isAllDay) - Number(a.isAllDay) || (a.startUtc ?? '').localeCompare(b.startUtc ?? ''));
   return (
-    <div className="rounded-lg bg-surface px-2 py-1.5" aria-label="Calendar events">
+    <div className="wos-events rounded-2xl bg-surface px-2 py-2" aria-label="Calendar events">
       {sorted.map((e) => (
         <EventRow key={e.id} event={e} />
       ))}

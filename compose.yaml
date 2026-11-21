@@ -25,9 +25,9 @@ services:
     volumes:
        - /home/vipul/workspace/workspace-os/data:/data
        - /home/vipul/workspace/workspace-os/backups:/backups
-       # Built web app, so a screen change does not need a full image rebuild.
-       - /home/vipul/workspace/workspace-os/apps/web/dist:/app/web:ro
-       - /home/vipul/workspace/workspace-os/apps/server/dist:/app/dist:ro
+       # The image already contains the frontend and backend build artifacts.
+       # Do not bind-mount host dist folders here: they mask newly rebuilt image files.
+       # Persistent app data and backups remain on the existing host directories above.
     read_only: true
     tmpfs:
       - /tmp

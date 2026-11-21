@@ -113,8 +113,8 @@ export const TaskRow = memo(function TaskRow({ task, showProject, showDate = tru
   return (
     <Swipeable task={task} disabled={dragging}>
     <div
-      className={clsx('group flex items-start gap-0 border-b border-line/70 pr-2 outline-none', dragging && 'rounded-lg bg-surface shadow-lg')}
-      style={{ paddingLeft: depth * 28 }}
+      className={clsx('wos-task-row group flex items-start gap-0 pr-2 outline-none', dragging && 'rounded-lg bg-surface shadow-lg')}
+      style={{ paddingLeft: 8 + depth * 28 }}
     >
       <TaskCheckbox task={task} onToggle={() => onToggle(task)} />
       <button type="button" onClick={() => actions.openTask(task.id)} className="min-w-0 flex-1 py-2.5 pr-1 text-left" aria-label={`Open ${task.title}`}>

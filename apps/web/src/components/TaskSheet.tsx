@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DOMPurify from 'dompurify';
 import { Archive, Copy, Flag, MoreHorizontal, Plus, Send, Trash2, X, Clock, Target, CalendarClock } from 'lucide-react';
 import { marked } from 'marked';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { buildDue, formatDateLabel, localTimeOf, sortByPosition, type CommentDTO, type TaskDTO } from '@wos/shared';
 import { api, errorMessage } from '../lib/api';
 import { CREATOROS_KEY, useCreatoros } from '../lib/creatoros';
@@ -46,12 +46,27 @@ function TaskDetail({ id }: { id: string }) {
   const today = useToday();
   const { toggle, dialog } = useToggleTask();
   const [title, setTitle] = useState(task.title);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
   const [desc, setDesc] = useState(task.description);
   const [editDesc, setEditDesc] = useState(false);
   const [subTitle, setSubTitle] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => setTitle(task.title), [task.title]);
+  // Keep the entire task title readable, even when it wraps to many lines on a phone.
+  // The textarea stays editable, but grows to its content instead of clipping at rows={1}.
+  useLayoutEffect(() => {
+    const element = titleRef.current;
+    if (!element) return;
+    const resize = () => {
+      element.style.height = 'auto';
+      element.style.height = `${element.scrollHeight + 2}px`;
+    };
+    resize();
+    // Rotating the phone or changing the sheet width can re-wrap the same title.
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, [title]);
   useEffect(() => {
     if (!editDesc) setDesc(task.description);
   }, [task.description, editDesc]);
@@ -88,8 +103,8 @@ function TaskDetail({ id }: { id: string }) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 border-b border-line px-3 py-2">
+    <div className="wos-task-sheet flex h-full min-h-0 flex-1 flex-col">
+      <div className="flex min-h-[62px] items-center gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1 truncate text-sm text-muted">
           {parent ? (
             <button className="hover:text-fg" onClick={() => actions.openTask(parent.id)}>
@@ -144,10 +159,11 @@ function TaskDetail({ id }: { id: string }) {
         </IconButton>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-auto p-4 scroll-thin">
-        <div className="flex items-start gap-1">
+      <div className="min-h-0 flex-1 space-y-5 overflow-auto p-4 scroll-thin sm:p-5">
+        <div className="wos-task-title-row flex min-w-0 items-start gap-2">
           <TaskCheckbox task={task} onToggle={() => toggle(task)} />
           <Textarea
+            ref={titleRef}
             aria-label="Task title"
             rows={1}
             value={title}
@@ -160,7 +176,7 @@ function TaskDetail({ id }: { id: string }) {
                 (e.target as HTMLTextAreaElement).blur();
               }
             }}
-            className={clsx('min-h-11 resize-none border-transparent bg-transparent text-lg font-semibold', task.status === 'completed' && 'text-muted line-through')}
+            className={clsx('wos-task-title min-w-0 flex-1 resize-none overflow-hidden border-transparent bg-transparent px-2 py-2 text-lg font-semibold leading-snug', task.status === 'completed' && 'text-muted line-through')}
           />
         </div>
 
@@ -180,8 +196,8 @@ function TaskDetail({ id }: { id: string }) {
           />
         </div>
 
-        <section aria-label="Planning" className="grid gap-2 sm:grid-cols-2">
-          <div className="flex items-center gap-2 rounded-lg bg-surface p-2.5">
+        <section aria-label="Planning" className="grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3">
             <CalendarClock size={16} className="text-muted" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted">Planned (scheduled) date</p>
@@ -236,9 +252,9 @@ function TaskDetail({ id }: { id: string }) {
           {editDesc ? (
             <Textarea aria-label="Description" rows={6} value={desc} maxLength={20000} onChange={(e) => setDesc(e.target.value)} placeholder="Markdown: **bold**, - lists, [links](https://...)" />
           ) : html ? (
-            <div className="prose-md rounded-lg bg-surface p-3 text-sm" dangerouslySetInnerHTML={{ __html: html }} />
+            <div className="prose-md rounded-2xl border border-line bg-surface p-4 text-sm" dangerouslySetInnerHTML={{ __html: html }} />
           ) : (
-            <button className="w-full rounded-lg bg-surface p-3 text-left text-sm text-muted" onClick={() => setEditDesc(true)}>
+            <button className="w-full rounded-2xl border border-line bg-surface p-4 text-left text-sm text-muted" onClick={() => setEditDesc(true)}>
               Add a description...
             </button>
           )}

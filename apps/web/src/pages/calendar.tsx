@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, RefreshCw, TriangleAlert } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { addDays, endOfMonth, formatLongDate, monthName, parseDate, rangeDays, startOfMonth, startOfWeek, type CalendarEventDTO, type TaskDTO, WEEKDAY_NAMES, compareTasks } from '@wos/shared';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { addDays, endOfMonth, formatLongDate, isValidDateStr, monthName, parseDate, rangeDays, startOfMonth, startOfWeek, type CalendarEventDTO, type TaskDTO, WEEKDAY_NAMES, compareTasks } from '@wos/shared';
 import { EventBlock } from '../components/EventRow';
 import { PageHeader } from '../components/PageHeader';
 import { TaskList, PRIORITY_COLOR } from '../components/TaskRow';
@@ -23,7 +23,7 @@ export function MonthGrid({ month, byDay, today, weekStart, selected, onSelect }
   const weeks = Array.from({ length: days.length / 7 }, (_, i) => days.slice(i * 7, i * 7 + 7));
   const heads = days.slice(0, 7).map((d) => WEEKDAY_NAMES[weekdayIdx(d)] as string);
   return (
-    <div role="grid" aria-label={`${monthName(parseDate(month).m)} ${parseDate(month).y}`} className="overflow-hidden rounded-xl border border-line">
+    <div role="grid" aria-label={`${monthName(parseDate(month).m)} ${parseDate(month).y}`} className="overflow-hidden rounded-[24px] border border-line bg-surface p-1">
       <div role="row" className="grid grid-cols-7 border-b border-line bg-surface text-center text-xs text-muted">
         {heads.map((h) => (
           <span key={h} role="columnheader" className="py-1.5">
@@ -46,7 +46,7 @@ export function MonthGrid({ month, byDay, today, weekStart, selected, onSelect }
               aria-label={`${formatLongDate(d)}: ${events.length} events, ${tasks.length} tasks`}
               aria-selected={selected === d}
               onClick={() => onSelect(d)}
-              className={clsx('min-h-[64px] border-b border-r border-line p-1 text-left align-top hover:bg-surface md:min-h-[92px]', selected === d && 'bg-surface')}
+              className={clsx('min-h-[64px] rounded-lg border-b border-r border-line p-1 text-left align-top hover:bg-surface2 md:min-h-[92px]', selected === d && 'bg-surface2 ring-1 ring-accent-text')}
             >
               <span className={clsx('mb-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs', d === today && 'bg-accent font-bold text-accent-fg', d !== today && !inMonth && 'text-muted')}>{parseDate(d).d}</span>
               <span className="hidden space-y-0.5 md:block">
@@ -88,16 +88,20 @@ export function CalendarPage() {
   const today = useToday();
   const tz = useTz();
   const weekStart = useWeekStart();
-  const [mode, setMode] = useState<'month' | 'week'>('month');
-  const [cursor, setCursor] = useState(startOfMonth(today));
-  const [selected, setSelected] = useState<string>(today);
+  const [params] = useSearchParams();
+  const requested = params.get('date');
+  const initialDate = requested && isValidDateStr(requested) ? requested : today;
+  const [mode, setMode] = useState<'agenda' | 'month' | 'week'>('agenda');
+  const [cursor, setCursor] = useState(startOfMonth(initialDate));
+  const [selected, setSelected] = useState<string>(initialDate);
+  useEffect(() => { setCursor(startOfMonth(initialDate)); setSelected(initialDate); }, [initialDate]);
   const all = useAllTasks();
   const hidden = useStore((s) => s.prefs['calendar.hiddenSources'] as string[]);
   const cals = useExternalCalendars();
   const online = useStore((s) => s.online);
 
   const weekFirst = startOfWeek(selected, weekStart);
-  const range = mode === 'month' ? { start: startOfWeek(startOfMonth(cursor), weekStart), end: addDays(startOfWeek(endOfMonth(cursor), weekStart), 6) } : { start: weekFirst, end: addDays(weekFirst, 6) };
+  const range = mode !== 'week' ? { start: startOfWeek(startOfMonth(cursor), weekStart), end: addDays(startOfWeek(endOfMonth(cursor), weekStart), 6) } : { start: weekFirst, end: addDays(weekFirst, 6) };
   const ev = useCalendarEvents(range.start, range.end);
 
   const byDay = useMemo(() => {
@@ -130,10 +134,10 @@ export function CalendarPage() {
   const anyProblem = items.some((c) => c.isSelected && (c.syncHealth === 'reauth_required' || c.syncHealth === 'error'));
   const day = byDay.get(selected);
   const move = (n: number) => {
-    if (mode === 'month') setCursor(startOfMonth(addDays(endOfMonth(cursor), n > 0 ? 1 : -1)));
+    if (mode !== 'week') setCursor(startOfMonth(addDays(endOfMonth(cursor), n > 0 ? 1 : -1)));
     else setSelected(addDays(selected, 7 * n));
   };
-  const { y, m } = parseDate(mode === 'month' ? cursor : selected);
+  const { y, m } = parseDate(mode === 'week' ? selected : cursor);
 
   return (
     <>
@@ -142,13 +146,15 @@ export function CalendarPage() {
         subtitle={`${monthName(m)} ${y}`}
         right={
           <>
-            <Segmented label="Calendar layout" value={mode} onChange={setMode} options={[{ value: 'month', label: 'Month' }, { value: 'week', label: 'Week' }]} />
             <IconButton label="Sync calendars now" onClick={sync} disabled={!online}>
               <RefreshCw size={18} />
             </IconButton>
           </>
         }
       />
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <Segmented label="Calendar layout" value={mode} onChange={setMode} options={[{ value: 'agenda', label: 'Agenda' }, { value: 'month', label: 'Month' }, { value: 'week', label: 'Week' }]} />
+      </div>
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <IconButton label="Previous" onClick={() => move(-1)}>
@@ -198,6 +204,31 @@ export function CalendarPage() {
 
       {ev.isLoading ? (
         <Spinner />
+      ) : mode === 'agenda' ? (
+        <div className="space-y-4" role="region" aria-label="Calendar agenda">
+          {rangeDays(range.start, range.end)
+            .filter((d) => {
+              const b = byDay.get(d);
+              return d === startOfMonth(cursor) || d === selected || d === today || !!b?.tasks.length || !!b?.events.length;
+            })
+            .map((d) => {
+              const b = byDay.get(d);
+              return (
+                <section key={d} className="wos-panel p-4" aria-label={formatLongDate(d)}>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="flex items-center gap-2 font-bold">
+                      <span className={clsx('inline-flex h-9 w-9 items-center justify-center rounded-full text-sm', d === today ? 'bg-accent text-accent-fg' : 'bg-surface2')}>{parseDate(d).d}</span>
+                      {formatLongDate(d)} {d === today && <span className="text-xs font-medium text-accent-text">Today</span>}
+                    </h2>
+                    <Button size="sm" variant="ghost" onClick={() => actions.openQuickAdd({ date: d })}>+ Add</Button>
+                  </div>
+                  {b?.events.length ? <EventBlock events={b.events} /> : null}
+                  {b?.tasks.length ? <div className="mt-2"><TaskList tasks={b.tasks} showProject /></div> : null}
+                  {!b?.events.length && !b?.tasks.length && <p className="px-1 py-2 text-sm text-muted">Nothing scheduled for this day.</p>}
+                </section>
+              );
+            })}
+        </div>
       ) : mode === 'month' ? (
         <MonthGrid month={cursor} byDay={byDay} today={today} weekStart={weekStart} selected={selected} onSelect={setSelected} />
       ) : (
@@ -205,7 +236,7 @@ export function CalendarPage() {
           {rangeDays(weekFirst, addDays(weekFirst, 6)).map((d) => {
             const b = byDay.get(d);
             return (
-              <button key={d} onClick={() => setSelected(d)} aria-pressed={selected === d} className={clsx('rounded-lg border border-line p-2 text-left text-xs', selected === d && 'bg-surface', d === today && 'border-accent-text')}>
+              <button key={d} onClick={() => setSelected(d)} aria-pressed={selected === d} className={clsx('rounded-2xl border border-line bg-surface p-3 text-left text-xs', selected === d && 'bg-surface2', d === today && 'border-accent-text')}>
                 <span className="mb-1 block font-semibold">{WEEKDAY_NAMES[weekdayIdx(d)]?.slice(0, 3)} {parseDate(d).d}</span>
                 {(b?.events ?? []).slice(0, 4).map((e) => (
                   <span key={e.id} className="mb-0.5 block truncate rounded px-1" style={{ background: `color-mix(in srgb, ${e.color} 22%, transparent)` }}>
@@ -223,7 +254,7 @@ export function CalendarPage() {
         </div>
       )}
 
-      <section className="mt-5" aria-label={`Details for ${formatLongDate(selected)}`}>
+      {mode !== 'agenda' && <section className="mt-5" aria-label={`Details for ${formatLongDate(selected)}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold">{formatLongDate(selected)}</h2>
           <Button size="sm" variant="ghost" onClick={() => actions.openQuickAdd({ date: selected })}>
@@ -233,7 +264,7 @@ export function CalendarPage() {
         {day?.events.length ? <div className="mt-1"><EventBlock events={day.events} /></div> : null}
         {day?.tasks.length ? <TaskList tasks={day.tasks} showProject /> : null}
         {!day?.events.length && !day?.tasks.length && <p className="py-4 text-sm text-muted">Nothing on this day.</p>}
-      </section>
+      </section>}
     </>
   );
 }

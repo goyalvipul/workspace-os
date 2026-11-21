@@ -18,8 +18,8 @@ export const Button = forwardRef<HTMLButtonElement, BtnProps>(function Button({ 
       type="button"
       {...p}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed select-none',
-        size === 'sm' ? 'min-h-8 px-3 text-sm' : 'min-h-10 px-4 text-sm',
+        'inline-flex items-center justify-center gap-2 rounded-2xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed select-none',
+        size === 'sm' ? 'min-h-9 px-3 text-sm' : 'min-h-11 px-4 text-sm',
         variant === 'primary' && 'bg-accent text-accent-fg hover:bg-accent-strong',
         variant === 'secondary' && 'bg-surface2 text-fg hover:bg-line',
         variant === 'ghost' && 'text-fg hover:bg-surface2',
@@ -32,14 +32,14 @@ export const Button = forwardRef<HTMLButtonElement, BtnProps>(function Button({ 
 
 export const IconButton = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { label: string }>(function IconButton({ label, className, children, ...p }, ref) {
   return (
-    <button ref={ref} type="button" aria-label={label} title={label} {...p} className={clsx('inline-flex h-10 w-10 items-center justify-center rounded-full text-fg hover:bg-surface2 disabled:opacity-40', className)}>
+    <button ref={ref} type="button" aria-label={label} title={label} {...p} className={clsx('inline-flex h-11 w-11 items-center justify-center rounded-2xl text-fg hover:bg-surface2 disabled:opacity-40', className)}>
       {children}
     </button>
   );
 });
 
 // ---------------------------------------------------------------- form fields
-const fieldCls = 'w-full rounded-lg border border-line bg-surface px-3 min-h-10 text-sm text-fg placeholder:text-muted focus:border-accent-text focus:outline-none';
+const fieldCls = 'w-full rounded-2xl border border-line bg-surface px-3 min-h-11 text-sm text-fg placeholder:text-muted focus:border-accent-text focus:outline-none';
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...p }, ref) {
   return <input ref={ref} {...p} className={clsx(fieldCls, className)} />;
 });
@@ -83,9 +83,9 @@ export function Switch({ checked, onChange, label, disabled }: { checked: boolea
 
 export function Segmented<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; label: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg bg-surface2 p-0.5">
+    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full flex-wrap rounded-2xl bg-surface2 p-1">
       {options.map((o) => (
-        <button key={o.value} type="button" role="radio" aria-checked={value === o.value} onClick={() => onChange(o.value)} className={clsx('min-h-8 rounded-md px-3 text-sm', value === o.value ? 'bg-bg font-medium text-fg shadow-sm' : 'text-muted hover:text-fg')}>
+        <button key={o.value} type="button" role="radio" aria-checked={value === o.value} onClick={() => onChange(o.value)} className={clsx('min-h-9 rounded-xl px-3 text-sm font-medium', value === o.value ? 'bg-bg font-medium text-fg shadow-sm' : 'text-muted hover:text-fg')}>
           {o.label}
         </button>
       ))}
@@ -130,8 +130,8 @@ export function Sheet({ open, onOpenChange, title, children, side, wide }: { ope
           style={!desktop && kb.height ? { bottom: kb.bottom, maxHeight: kb.height - 12 } : undefined}
           className={clsx(
             'anim-sheet fixed z-50 flex max-h-[92dvh] flex-col overflow-hidden border border-line bg-bg shadow-2xl outline-none',
-            'inset-x-0 bottom-0 rounded-t-2xl',
-            side ? 'md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[480px] md:rounded-none md:rounded-l-2xl' : clsx('md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl', wide ? 'md:w-[min(720px,94vw)]' : 'md:w-[min(520px,94vw)]'),
+            'inset-x-0 bottom-0 rounded-t-[30px]',
+            side ? 'md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[480px] md:rounded-none md:rounded-l-[30px]' : clsx('md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl', wide ? 'md:w-[min(720px,94vw)]' : 'md:w-[min(520px,94vw)]'),
           )}
         >
           <Dialog.Title className="sr-only">{title}</Dialog.Title>
@@ -144,11 +144,11 @@ export function Sheet({ open, onOpenChange, title, children, side, wide }: { ope
 
 export function SheetHeader({ title, onClose, right }: { title: string; onClose: () => void; right?: ReactNode }) {
   return (
-    <div className="flex items-center gap-2 border-b border-line px-3 py-2">
+    <div className="flex min-h-[64px] items-center gap-2 border-b border-line px-4 py-3">
       <IconButton label="Close" onClick={onClose} className="bg-surface">
         <X size={20} />
       </IconButton>
-      <h2 className="flex-1 truncate text-center text-base font-semibold">{title}</h2>
+      <h2 className="flex-1 truncate text-center text-lg font-bold">{title}</h2>
       <div className="flex min-w-10 justify-end">{right}</div>
     </div>
   );
@@ -189,7 +189,7 @@ export const MenuTrigger = Dropdown.Trigger;
 export function MenuContent({ children, align = 'end' }: { children: ReactNode; align?: 'start' | 'end' | 'center' }) {
   return (
     <Dropdown.Portal>
-      <Dropdown.Content align={align} sideOffset={6} className="anim-fade z-[60] min-w-[200px] rounded-xl border border-line bg-surface p-1.5 shadow-2xl">
+      <Dropdown.Content align={align} sideOffset={6} className="anim-fade z-[60] min-w-[200px] rounded-2xl border border-line bg-surface p-1.5 shadow-2xl">
         {children}
       </Dropdown.Content>
     </Dropdown.Portal>
@@ -197,7 +197,7 @@ export function MenuContent({ children, align = 'end' }: { children: ReactNode; 
 }
 export function MenuItem({ children, onSelect, danger, icon }: { children: ReactNode; onSelect: () => void; danger?: boolean; icon?: ReactNode }) {
   return (
-    <Dropdown.Item onSelect={onSelect} className={clsx('flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-3 text-sm outline-none data-[highlighted]:bg-surface2', danger && 'text-danger')}>
+    <Dropdown.Item onSelect={onSelect} className={clsx('flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 text-sm outline-none data-[highlighted]:bg-surface2', danger && 'text-danger')}>
       {icon}
       {children}
     </Dropdown.Item>
@@ -210,7 +210,7 @@ export const PopoverTrigger = Popover.Trigger;
 export function PopoverContent({ children, className, align = 'start' }: { children: ReactNode; className?: string; align?: 'start' | 'end' | 'center' }) {
   return (
     <Popover.Portal>
-      <Popover.Content align={align} sideOffset={6} collisionPadding={8} className={clsx('anim-fade z-[70] max-h-[min(70dvh,var(--radix-popover-content-available-height))] overflow-auto rounded-xl border border-line bg-surface p-2 shadow-2xl', className)}>
+      <Popover.Content align={align} sideOffset={6} collisionPadding={8} className={clsx('anim-fade z-[70] max-h-[min(70dvh,var(--radix-popover-content-available-height))] overflow-auto rounded-2xl border border-line bg-surface p-2 shadow-2xl', className)}>
         {children}
       </Popover.Content>
     </Popover.Portal>

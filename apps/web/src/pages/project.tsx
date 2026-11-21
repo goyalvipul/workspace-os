@@ -84,7 +84,7 @@ export function ProjectPage() {
       />
       {project.archivedAt && <p className="mb-2 rounded-lg bg-surface p-3 text-sm text-muted">This project is archived. Unarchive it from the menu to bring it back to your sidebar.</p>}
       {(project.outcome || project.description) && (
-        <div className="mb-3 rounded-lg bg-surface p-3 text-sm">
+        <div className="wos-panel mb-4 p-5 text-sm">
           {project.outcome && <p><span className="font-semibold">Outcome:</span> {project.outcome}</p>}
           {project.description && <p className="mt-1 whitespace-pre-wrap text-muted">{project.description}</p>}
         </div>
@@ -100,7 +100,7 @@ export function ProjectPage() {
       )}
 
       {doneList.length > 0 && (
-        <section className="mt-6" aria-label="Completed tasks">
+        <section className="wos-panel mt-6 p-3" aria-label="Completed tasks">
           <button className="flex min-h-10 items-center gap-1 text-sm font-semibold text-muted" aria-expanded={showDone} onClick={() => setShowDone(!showDone)}>
             <ChevronDown size={16} className={clsx('transition-transform', !showDone && '-rotate-90')} aria-hidden /> Completed ({doneList.length})
           </button>
@@ -145,7 +145,7 @@ function SectionHeader({ section, count, onMove }: { section: SectionDTO; count:
   const [name, setName] = useState(section.name);
   const [confirm, setConfirm] = useState(false);
   return (
-    <div className="flex min-h-10 items-center justify-between border-b border-line py-1">
+    <div className="flex min-h-12 items-center justify-between border-b border-line px-1 py-1">
       {renaming ? (
         <form className="flex flex-1 gap-2" onSubmit={(e) => { e.preventDefault(); if (name.trim() && name !== section.name) actions.updateSection(section.id, { name }); setRenaming(false); }}>
           <Input autoFocus aria-label="Section name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => setRenaming(false)} />
@@ -180,12 +180,12 @@ function ListLayout({ project, data }: { project: ProjectDTO; data: Data }) {
   const none = data.bySection(null);
   return (
     <div>
-      {none.length > 0 && <TaskList tasks={none} nested sortable={{ projectId: project.id, sectionId: null }} />}
+      {none.length > 0 && <div className="wos-panel p-3"><TaskList tasks={none} nested sortable={{ projectId: project.id, sectionId: null }} /></div>}
       <AddInline onClick={() => actions.openQuickAdd({ projectId: project.id, sectionId: null })} />
       {data.secs.map((s) => {
         const list = data.bySection(s.id);
         return (
-          <section key={s.id} className="mt-6" aria-label={s.name}>
+          <section key={s.id} className="wos-panel mt-5 p-3" aria-label={s.name}>
             <SectionHeader section={s} count={list.length} />
             <TaskList tasks={list} nested sortable={{ projectId: project.id, sectionId: s.id }} />
             <AddInline onClick={() => actions.openQuickAdd({ projectId: project.id, sectionId: s.id })} />
@@ -200,7 +200,7 @@ function ListLayout({ project, data }: { project: ProjectDTO; data: Data }) {
 function BoardCard({ task, onToggle }: { task: TaskDTO; onToggle: (t: TaskDTO) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { type: 'task' } });
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }} {...attributes} {...listeners} className="touch-none rounded-lg border border-line bg-surface">
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }} {...attributes} {...listeners} className="touch-none rounded-2xl bg-surface">
       <TaskRow task={task} onToggle={onToggle} showProject={false} />
     </div>
   );
@@ -209,7 +209,7 @@ function BoardCard({ task, onToggle }: { task: TaskDTO; onToggle: (t: TaskDTO) =
 function BoardColumn({ id, title, tasks, onAdd, onToggle, header, done }: { id: string; title: string; tasks: TaskDTO[]; onAdd?: () => void; onToggle: (t: TaskDTO) => void; header?: React.ReactNode; done?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${id}`, data: { type: 'column', sectionId: id === 'none' ? null : id } });
   return (
-    <section aria-label={title} className={clsx('flex w-[290px] shrink-0 flex-col rounded-xl border border-line bg-surface/40 px-3 py-2', isOver && 'ring-2 ring-accent-text')}>
+    <section aria-label={title} className={clsx('flex w-[300px] shrink-0 flex-col rounded-[25px] border border-line bg-surface/70 px-3 py-3', isOver && 'ring-2 ring-accent-text')}>
       {header ?? (
         <div className="flex min-h-10 items-center justify-between border-b border-line py-1">
           <h2 className="text-[15px] font-bold">{title} <span className="ml-1 text-xs font-normal text-muted">{tasks.length}</span></h2>
@@ -238,7 +238,7 @@ function AddColumn({ projectId, hasColumns }: { projectId: string; hasColumns: b
     setName('');
   };
   return (
-    <div className="flex w-[290px] shrink-0 flex-col gap-2 self-start rounded-xl border border-dashed border-line px-3 py-2">
+    <div className="flex w-[300px] shrink-0 flex-col gap-2 self-start rounded-[25px] border border-dashed border-line bg-surface/50 px-3 py-3">
       {open ? (
         <form
           className="flex flex-col gap-2"

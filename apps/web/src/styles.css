@@ -8,37 +8,37 @@ html {
 
 :root,
 :root[data-theme='dark'] {
-  --bg: #1c1c1e;
-  --surface: #262628;
-  --surface2: #303033;
-  --line: #3d3d41;
-  --fg: #f4f4f5;
-  --muted: #a1a1a8;
-  --accent: #c93b33;
-  --accent-strong: #b5332c;
-  --accent-text: #ff7a70;
-  --accent-fg: #ffffff;
-  --ok: #46a758;
-  --warn: #f5a623;
-  --danger: #ff6b6b;
-  --overlay: rgb(0 0 0 / 0.6);
+  --bg: #191c1a;
+  --surface: #252a26;
+  --surface2: #323a33;
+  --line: #414940;
+  --fg: #f8f5ed;
+  --muted: #b9bdb4;
+  --accent: #f5b871;
+  --accent-strong: #e7a356;
+  --accent-text: #ffc785;
+  --accent-fg: #201b14;
+  --ok: #9fd9a1;
+  --warn: #fbc883;
+  --danger: #ff8d87;
+  --overlay: rgb(0 0 0 / 0.62);
   color-scheme: dark;
 }
 :root[data-theme='light'] {
-  --bg: #ffffff;
-  --surface: #f6f6f7;
-  --surface2: #ececee;
-  --line: #dcdce0;
-  --fg: #1f1f23;
-  --muted: #5f5f68;
-  --accent: #c93b33;
-  --accent-strong: #b5332c;
-  --accent-text: #c43b34;
-  --accent-fg: #ffffff;
-  --ok: #2f8a42;
-  --warn: #b26f00;
-  --danger: #c62828;
-  --overlay: rgb(0 0 0 / 0.35);
+  --bg: #f7f5ee;
+  --surface: #fffefa;
+  --surface2: #eeeae0;
+  --line: #e6e1d8;
+  --fg: #211f1b;
+  --muted: #66635d;
+  --accent: #ffbe79;
+  --accent-strong: #efad65;
+  --accent-text: #985019;
+  --accent-fg: #21170d;
+  --ok: #28723d;
+  --warn: #96600c;
+  --danger: #b62b29;
+  --overlay: rgb(0 0 0 / 0.42);
   color-scheme: light;
 }
 
@@ -195,4 +195,179 @@ select {
 }
 .no-scrollbar {
   scrollbar-width: none;
+}
+
+/* Workspace OS calm surface system — inspired by the supplied visual direction,
+   not a copy of the reference app's illustrations or branding. */
+.wos-main { background: var(--bg); }
+.wos-sidebar { background: var(--surface); }
+.wos-sidebar-add { background: var(--accent); color: var(--accent-fg); }
+.wos-sidebar a[aria-current='page'] { background: var(--surface2); }
+.wos-content { min-height: 100%; }
+.wos-mobile-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 12px) 12px 12px;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.wos-mobile-menu, .wos-mobile-search {
+  flex: 0 0 42px; display: inline-flex; justify-content: center; align-items: center;
+  width: 42px; height: 44px; border-radius: 15px; color: var(--fg);
+}
+.wos-mobile-menu:active, .wos-mobile-search:active { background: var(--surface2); }
+.wos-mobile-pills { display: flex; gap: 8px; align-items: center; flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.wos-mobile-pill {
+  display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center;
+  min-height: 42px; padding: 0 19px; background: var(--surface2); color: var(--fg);
+  border-radius: 999px; font-size: 14px; font-weight: 650; transition: background .16s ease;
+}
+.wos-mobile-pill-active { background: var(--accent); color: var(--accent-fg); border-radius: 14px 24px 5px 14px; }
+/* The footer is a flex child of the full-height app. Unlike position:fixed,
+   it follows the actual usable mobile viewport on iOS Safari/PWA and never
+   floats over task content or leaves a large blank area below. */
+.wos-capture-footer {
+  position: relative; z-index: 30; flex: 0 0 auto;
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+}
+.wos-capture-dock {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; min-height: 68px; padding: 8px 10px; border-radius: 38px;
+  border: 1px solid var(--line); background: var(--surface);
+  box-shadow: 0 4px 16px rgb(0 0 0 / .08);
+}
+.wos-capture-plus, .wos-capture-search {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 48px; width: 48px; height: 48px; border-radius: 999px;
+}
+.wos-capture-plus { background: var(--accent); color: var(--accent-fg); }
+.wos-capture-search { background: var(--fg); color: var(--bg); }
+.wos-home { padding-top: 15px; }
+.wos-hero {
+  position: relative; overflow: hidden; padding: 25px 22px 20px; border-radius: 30px;
+  background: var(--surface); border: 1px solid var(--line);
+}
+.wos-hero::before {
+  content: ''; position: absolute; width: 250px; height: 250px; border-radius: 50%;
+  right: -115px; top: -135px; background: var(--accent); opacity: .17; pointer-events: none;
+}
+.wos-primary-cta, .wos-soft-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 17px; border-radius: 999px;
+  font-size: 14px; font-weight: 750; white-space: nowrap;
+}
+.wos-primary-cta { background: var(--accent); color: var(--accent-fg); }
+.wos-soft-button { background: var(--surface2); color: var(--fg); }
+.wos-primary-cta:hover { background: var(--accent-strong); }
+.wos-metric {
+  display: flex; flex-direction: column; min-width: 0; padding: 14px 12px;
+  border-radius: 19px; border: 1px solid var(--line); background: var(--bg); transition: transform .15s ease;
+}
+.wos-metric:hover, .wos-space-card:hover { transform: translateY(-2px); }
+.wos-metric-number { font-size: clamp(22px, 5vw, 31px); font-weight: 850; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.wos-metric-label { margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.3; }
+.wos-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 25px; box-shadow: 0 1px 1px rgb(0 0 0 / .02); }
+.wos-section-label {
+  display: inline-flex; align-items: center; width: fit-content; min-height: 38px;
+  padding: 7px 18px; border-radius: 14px 26px 7px 13px;
+  color: #28241e; font-size: 15px; font-weight: 800; line-height: 1.3;
+}
+.wos-section-peach { background: #ffc88e; }
+.wos-section-lime { background: #c4ef97; }
+.wos-section-yellow { background: #fff5a4; }
+.wos-section-lavender { background: #f0d4fb; }
+.wos-section-mint { background: #c8f3e2; }
+.wos-progress-ring { display: flex; align-items: center; justify-content: center; width: 94px; height: 94px; border-radius: 50%; padding: 9px; }
+.wos-progress-ring > div { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; flex-direction: column; border-radius: 50%; background: var(--surface); }
+.wos-progress-ring strong { font-size: 22px; line-height: 1.1; }
+.wos-progress-ring span { font-size: 11px; color: var(--muted); }
+.wos-empty-icon {
+  display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center;
+  width: 56px; height: 56px; border-radius: 20px; background: var(--surface2); color: var(--accent-text);
+}
+.wos-space-card { display: flex; min-height: 158px; flex-direction: column; align-items: flex-start; border: 1px solid var(--line); background: var(--surface); padding: 18px; border-radius: 25px; transition: transform .15s ease; }
+.wos-space-icon { display: inline-flex; padding: 10px; border-radius: 14px; background: var(--surface2); }
+.wos-filter-pill {
+  display: inline-flex; min-height: 39px; align-items: center; justify-content: center;
+  padding: 0 17px; border-radius: 999px; color: var(--fg); background: var(--surface2);
+  font-size: 13px; font-weight: 650;
+}
+.wos-filter-active { background: var(--accent); color: var(--accent-fg); border-radius: 12px 22px 5px 12px; }
+.wos-search-input { min-height: 52px; border-radius: 999px; background: var(--surface); }
+.wos-task-row { min-height: 67px; margin-bottom: 8px; border-radius: 19px; border: 1px solid var(--line); background: var(--surface); padding: 5px 10px; transition: background .16s ease; }
+.wos-task-row:hover { background: var(--surface2); }
+.wos-panel .wos-task-row { background: var(--bg); }
+.wos-panel .wos-task-row:hover { background: var(--surface2); }
+.wos-task-row button[aria-label^='Open '] { padding-top: 10px; padding-bottom: 10px; }
+.wos-task-row button[aria-label^='Open '] > span:first-child { font-weight: 600; }
+.wos-page-header h1 { font-weight: 820; letter-spacing: -.035em; }
+.wos-events { border-radius: 19px; background: var(--bg); }
+@media (min-width: 768px) {
+  .wos-mobile-header, .wos-capture-footer { display: none; }
+  .wos-home { padding-top: 20px; }
+  .wos-hero { padding: 32px; }
+}
+@media (max-width: 360px) {
+  .wos-mobile-pill { padding: 0 15px; }
+  .wos-capture-footer { padding-right: 10px; padding-left: 10px; }
+  .wos-metric { padding: 12px 8px; }
+}
+
+
+/* Phase 2–3: consistent control density and the personalized productivity dashboard. */
+.wos-week-grid {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px;
+}
+.wos-week-day {
+  display: flex; min-width: 0; min-height: 94px; flex-direction: column;
+  align-items: center; justify-content: space-between; gap: 5px;
+  padding: 12px 2px; border: 1px solid var(--line); border-radius: 17px;
+  background: var(--bg); transition: background .18s ease;
+}
+.wos-week-day:hover { background: var(--surface2); }
+.wos-week-day:first-child { border-color: var(--accent-text); }
+.wos-week-count, .wos-week-none {
+  display: inline-flex; min-width: 25px; height: 25px; align-items: center;
+  justify-content: center; border-radius: 50%; font-size: 12px; font-weight: 800;
+}
+.wos-week-count { color: var(--accent-fg); background: var(--accent); }
+.wos-week-none { color: var(--muted); }
+.wos-task-toolbar { background: var(--surface); border: 1px solid var(--line); }
+.wos-group-heading:hover { background: var(--surface2); }
+.wos-group-symbol {
+  display: flex; width: 35px; height: 35px; flex: 0 0 35px;
+  align-items: center; justify-content: center; border-radius: 13px;
+  color: var(--accent-text); background: var(--surface2);
+}
+.wos-inline-add:hover { background: var(--surface2); }
+.wos-icon-control {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 12px; background: var(--surface2);
+}
+.wos-icon-control:hover { background: var(--line); }
+.wos-icon-control:disabled { opacity: .3; cursor: not-allowed; }
+.wos-settings-tile { transition: transform .15s ease, background .15s ease; }
+.wos-settings-tile:hover { transform: translateY(-1px); }
+.wos-settings-content > section:not([class*='border']) {
+  border-radius: 20px;
+}
+.wos-task-sheet > div:first-child { background: var(--surface); }
+.wos-quick-add input[aria-label="Task name"] { background: var(--surface); }
+.wos-calendar-strip button { border-radius: 13px; }
+.wos-calendar-strip button:hover { background: var(--surface2); }
+@media (max-width: 390px) {
+  .wos-week-grid { gap: 4px; }
+  .wos-week-day { min-height: 85px; border-radius: 13px; }
+  .wos-week-count, .wos-week-none { min-width: 22px; height: 22px; }
+}
+
+/* Task details: show every line of the editable title before the task metadata chips.
+   The editor measures its content in TaskSheet.tsx; no one-line clipping on phones. */
+.wos-task-title-row { width: 100%; }
+.wos-task-title {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  overflow: hidden;
 }

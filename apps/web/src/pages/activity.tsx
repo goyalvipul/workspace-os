@@ -43,7 +43,7 @@ function Goals() {
   if (!p) return <EmptyState title="Goals need a connection" art={false} />;
   const daily = Number(prefs['productivity.dailyGoal']);
   const weekly = Number(prefs['productivity.weeklyGoal']);
-  const stat = 'rounded-xl bg-surface p-4';
+  const stat = 'wos-panel p-5';
   const bar = (v: number, max: number, label: string) => (
     <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.min(v, max)} className="mt-2 h-2.5 overflow-hidden rounded-full bg-surface2">
       <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${Math.min(100, (v / max) * 100)}%` }} />
@@ -113,7 +113,7 @@ function Feed() {
       {q.isError && <EmptyState title="Activity needs a connection" body="Reconnect and try again." art={false} />}
       {!q.isLoading && !q.isError && !items.length && <EmptyState title="No activity yet" body="Completing and editing tasks will show up here." art={false} />}
       {groups.map(([date, list]) => (
-        <section key={date} className="mb-5" aria-label={dayHeading(date, today)}>
+        <section key={date} className="wos-panel mb-5 p-4" aria-label={dayHeading(date, today)}>
           <h2 className="mb-1 border-b border-line pb-1 text-sm font-semibold">{dayHeading(date, today)}</h2>
           <ul>
             {list.map((a) => (
@@ -139,7 +139,7 @@ function Report() {
   if (!q.data) return <EmptyState title="Reports need a connection" art={false} />;
   const d = q.data;
   const max = Math.max(1, ...d.days.map((x) => x.completed));
-  const stat = 'rounded-xl bg-surface p-3';
+  const stat = 'wos-panel p-4';
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -149,7 +149,7 @@ function Report() {
         <div className={stat}><p className="text-2xl font-semibold">{d.overdue}</p><p className="text-xs text-muted">Overdue</p></div>
       </div>
       <h2 className="mb-2 mt-6 text-sm font-semibold">Completed per day</h2>
-      <div role="img" aria-label={`Bar chart of tasks completed per day: ${d.days.map((x) => `${x.date} ${x.completed}`).join(', ')}`} className="flex h-36 items-end gap-2 rounded-xl bg-surface p-3">
+      <div role="img" aria-label={`Bar chart of tasks completed per day: ${d.days.map((x) => `${x.date} ${x.completed}`).join(', ')}`} className="wos-panel flex h-36 items-end gap-2 p-4">
         {d.days.map((x) => (
           <div key={x.date} className="flex flex-1 flex-col items-center justify-end gap-1">
             <span className="text-xs text-muted">{x.completed || ''}</span>

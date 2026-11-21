@@ -1,0 +1,36 @@
+# Isolated preview stack for the Nori-inspired Workspace OS UX.
+# Use ONLY: docker compose -f compose.ux-preview.yaml ...
+# This file deliberately does not mount production data, backups, build output or the production port.
+name: workspace-os-ux-preview
+
+services:
+  app:
+    build:
+      context: .
+    image: workspace-os:ux-preview
+    container_name: workspace-os-ux-preview
+    restart: unless-stopped
+    env_file: .env.preview
+    environment:
+      NODE_ENV: production
+      APP_PORT: "3000"
+      APP_HOST: 0.0.0.0
+      DATABASE_PATH: /data/workspace.sqlite
+      BACKUP_DIR: /backups
+    ports:
+      - "127.0.0.1:4391:3000"
+    volumes:
+      - wos-ux-data:/data
+      - wos-ux-backups:/backups
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stop_grace_period: 20s
+
+volumes:
+  wos-ux-data:
+  wos-ux-backups:

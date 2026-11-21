@@ -11,6 +11,8 @@ import {
   localTimeOf,
   nextOccurrence,
   parseQuickAdd,
+  preferenceDefaults,
+  preferenceSchemas,
   selectToday,
   templateBodySchema,
   todayLocal,
@@ -132,5 +134,18 @@ describe('built-in templates', () => {
   it('all validate against the template schema', () => {
     expect(BUILTIN_TEMPLATES.length).toBeGreaterThanOrEqual(3);
     for (const t of BUILTIN_TEMPLATES) expect(templateBodySchema.safeParse(t.body).success, t.key).toBe(true);
+  });
+});
+
+describe('dashboard and task-grouping preferences', () => {
+  it('defaults to all five dashboard sections in a predictable order', () => {
+    expect(preferenceDefaults['dashboard.widgets']).toEqual(['progress', 'focus', 'week', 'calendar', 'projects']);
+    expect(preferenceSchemas['dashboard.widgets'].safeParse(['progress', 'focus']).success).toBe(true);
+    expect(preferenceSchemas['dashboard.widgets'].safeParse(['progress', 'progress']).success).toBe(false);
+  });
+  it('only accepts supported grouping and sorting values', () => {
+    expect(preferenceSchemas['display.allTasksGrouping'].parse('project')).toBe('project');
+    expect(preferenceSchemas['display.allTasksSort'].parse('priority')).toBe('priority');
+    expect(preferenceSchemas['display.allTasksGrouping'].safeParse('unknown').success).toBe(false);
   });
 });

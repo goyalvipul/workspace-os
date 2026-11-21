@@ -12,9 +12,9 @@ import { actions, refresh, toast, useStore } from '../lib/store';
 
 export function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-line/60 py-3">
-      <div className="min-w-0"><p className="text-sm">{label}</p>{hint && <p className="text-xs text-muted">{hint}</p>}</div>
-      <div className="shrink-0">{children}</div>
+    <div className="flex flex-col items-start justify-between gap-3 border-b border-line/60 px-1 py-4 sm:flex-row sm:items-center">
+      <div className="min-w-0"><p className="text-sm font-semibold">{label}</p>{hint && <p className="text-xs text-muted">{hint}</p>}</div>
+      <div className="max-w-full shrink-0">{children}</div>
     </div>
   );
 }
@@ -52,7 +52,7 @@ export function General() {
     <>
       <Row label="Home view" hint="What opens when you launch the app. Saved to your account, so every device follows it.">
         <Select aria-label="Home view" className="w-36" value={String(prefs['general.homeView'])} onChange={(e) => set('general.homeView', e.target.value)}>
-          <option value="today">Today</option><option value="inbox">Inbox</option><option value="upcoming">Upcoming</option><option value="calendar">Calendar</option><option value="browse">Browse</option>
+          <option value="home">Home dashboard</option><option value="tasks">All tasks</option><option value="today">Today</option><option value="inbox">Inbox</option><option value="upcoming">Upcoming</option><option value="calendar">Calendar</option><option value="browse">Browse</option>
         </Select>
       </Row>
       <Row label="Detect dates in task names" hint='Turns "tomorrow 5pm" or "every monday" typed in Quick Add into a due date.'>

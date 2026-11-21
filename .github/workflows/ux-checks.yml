@@ -1,0 +1,70 @@
+name: Workspace OS UX checks
+
+on:
+  push:
+    branches:
+      - feat/nori-inspired-ux-phase2-3
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "tests/**"
+      - "playwright.config.ts"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+
+concurrency:
+  group: workspace-os-ux-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint and typecheck
+        run: pnpm check
+      - name: Unit and API tests
+        run: pnpm test
+      - name: Build web and API
+        run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: check
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build web and API
+        run: pnpm build
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: E2E flows
+        run: pnpm test:e2e
+      - name: Upload failure reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-e2e-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
