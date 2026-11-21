@@ -139,3 +139,38 @@ test('mobile task details show the full title and keep metadata below the editor
   await subtasks.scrollIntoViewIfNeeded();
   await expect(subtasks).toBeInViewport();
 });
+
+test('capture bar occupies the bottom of the mobile app shell without a blank band', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'mobile layout only');
+  await page.goto('/home');
+  const footer = page.locator('.wos-capture-footer');
+  await expect(footer).toBeVisible();
+  const sizes = await page.evaluate(() => {
+    const shell = document.querySelector('.wos-app-shell');
+    const footer = document.querySelector('.wos-capture-footer');
+    const pill = document.querySelector('.wos-capture-dock');
+    const main = document.querySelector('#main');
+    if (!(shell && footer && pill && main)) return null;
+    const outer = shell.getBoundingClientRect();
+    const foot = footer.getBoundingClientRect();
+    const dock = pill.getBoundingClientRect();
+    const scroll = main.getBoundingClientRect();
+    return {
+      shellBottom: outer.bottom,
+      footerBottom: foot.bottom,
+      footerTop: foot.top,
+      dockBottom: dock.bottom,
+      mainBottom: scroll.bottom,
+      viewportHeight: window.innerHeight,
+    };
+  });
+  expect(sizes).not.toBeNull();
+  if (!sizes) return;
+  // The scroll area ends where the footer begins, not behind the quick-capture pill.
+  expect(Math.abs(sizes.mainBottom - sizes.footerTop)).toBeLessThanOrEqual(2);
+  expect(Math.abs(sizes.shellBottom - sizes.footerBottom)).toBeLessThanOrEqual(2);
+  expect(sizes.shellBottom).toBeGreaterThanOrEqual(sizes.viewportHeight - 2);
+  // Allow room for the iPhone home indicator, but not another unexplained strip.
+  expect(sizes.footerBottom - sizes.dockBottom).toBeLessThanOrEqual(48);
+  expect(sizes.footerBottom - sizes.dockBottom).toBeGreaterThanOrEqual(0);
+});
