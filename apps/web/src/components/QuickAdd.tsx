@@ -1,6 +1,6 @@
 import { Plus, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { buildDue, describeRule, formatDateLabel, formatTime, parseQuickAdd, stripTokens, type QuickAddToken, type ReminderInput } from '@wos/shared';
+import { addDays, buildDue, describeRule, formatDateLabel, formatTime, parseQuickAdd, stripTokens, type QuickAddToken, type ReminderInput } from '@wos/shared';
 import { actions, toast, useStore } from '../lib/store';
 import { useHour12, useToday, useTz } from '../lib/hooks';
 import { DatePicker, LabelPicker, PriorityPicker, ProjectPicker, RecurrencePicker, ReminderPicker, type DateValue, type RecurrenceValue } from './pickers';
@@ -138,6 +138,11 @@ function QuickAddForm({ defaults }: { defaults: ReturnType<typeof useStore.getSt
         }}
         className="min-h-14 text-base"
       />
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Quick due date">
+        <button type="button" aria-pressed={date.date === today} onClick={() => setManualDate({ date: today, time: null })} className={clsx('wos-filter-pill', date.date === today && 'wos-filter-active')}>Due today</button>
+        <button type="button" aria-pressed={date.date === addDays(today, 1)} onClick={() => setManualDate({ date: addDays(today, 1), time: null })} className={clsx('wos-filter-pill', date.date === addDays(today, 1) && 'wos-filter-active')}>Due tomorrow</button>
+        <button type="button" aria-pressed={explicitNoDate} onClick={() => setManualDate({ date: null, time: null })} className={clsx('wos-filter-pill', explicitNoDate && 'wos-filter-active')}>No due date</button>
+      </div>
       {tokens.length > 0 && !manualDate && (
         <div className="flex flex-wrap gap-2" aria-label="Recognised from your text">
           {tokens.map((t) => (
