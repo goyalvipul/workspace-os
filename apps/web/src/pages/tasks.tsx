@@ -42,7 +42,11 @@ export function AllTasksPage() {
 
   const groups = useMemo<TaskGroup[]>(() => {
     const map = new Map<string, TaskDTO[]>();
-    const push = (id: string, task: TaskDTO) => map.set(id, [...(map.get(id) ?? []), task]);
+    const push = (id: string, task: TaskDTO) => {
+      const items = map.get(id);
+      if (items) items.push(task);
+      else map.set(id, [task]);
+    };
     if (grouping === 'project') {
       for (const t of tasks) push(t.projectId ?? 'inbox', t);
       return [...map.entries()].map(([id, items]) => ({ id, label: id === 'inbox' ? 'Inbox / no project' : projects[id]?.name ?? 'Unknown project', tasks: items }))
