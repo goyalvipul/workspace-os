@@ -329,7 +329,7 @@ export const preferenceSchemas = {
   'display.inboxSort': z.enum(['manual', 'due', 'priority', 'created']),
   'display.allTasksGrouping': z.enum(['schedule', 'project']),
   'display.allTasksSort': z.enum(['due', 'priority', 'name']),
-  'dashboard.widgets': z.array(z.enum(['progress', 'focus', 'week', 'calendar', 'projects'])).max(5),
+  'dashboard.widgets': z.array(z.enum(['progress', 'focus', 'week', 'calendar', 'projects'])).max(5).refine((widgets) => new Set(widgets).size === widgets.length, 'Duplicate widgets are not allowed'),
   'focus.taskIds': z.array(ulid).max(3),
   'tasks.defaultPriority': priority,
   'tasks.defaultReminderTime': timeStr,
