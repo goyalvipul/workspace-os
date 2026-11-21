@@ -13,6 +13,10 @@ on:
       - "pnpm-lock.yaml"
   workflow_dispatch:
 
+concurrency:
+  group: workspace-os-ux-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
