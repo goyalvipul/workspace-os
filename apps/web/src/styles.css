@@ -305,3 +305,51 @@ select {
   .wos-capture-dock { left: 10px; right: 10px; }
   .wos-metric { padding: 12px 8px; }
 }
+
+
+/* Phase 2–3: consistent control density and the personalized productivity dashboard. */
+.wos-week-grid {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px;
+}
+.wos-week-day {
+  display: flex; min-width: 0; min-height: 94px; flex-direction: column;
+  align-items: center; justify-content: space-between; gap: 5px;
+  padding: 12px 2px; border: 1px solid var(--line); border-radius: 17px;
+  background: var(--bg); transition: background .18s ease;
+}
+.wos-week-day:hover { background: var(--surface2); }
+.wos-week-day:first-child { border-color: var(--accent-text); }
+.wos-week-count, .wos-week-none {
+  display: inline-flex; min-width: 25px; height: 25px; align-items: center;
+  justify-content: center; border-radius: 50%; font-size: 12px; font-weight: 800;
+}
+.wos-week-count { color: var(--accent-fg); background: var(--accent); }
+.wos-week-none { color: var(--muted); }
+.wos-task-toolbar { background: var(--surface); border: 1px solid var(--line); }
+.wos-group-heading:hover { background: var(--surface2); }
+.wos-group-symbol {
+  display: flex; width: 35px; height: 35px; flex: 0 0 35px;
+  align-items: center; justify-content: center; border-radius: 13px;
+  color: var(--accent-text); background: var(--surface2);
+}
+.wos-inline-add:hover { background: var(--surface2); }
+.wos-icon-control {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 12px; background: var(--surface2);
+}
+.wos-icon-control:hover { background: var(--line); }
+.wos-icon-control:disabled { opacity: .3; cursor: not-allowed; }
+.wos-settings-tile { transition: transform .15s ease, background .15s ease; }
+.wos-settings-tile:hover { transform: translateY(-1px); }
+.wos-settings-content > section:not([class*='border']) {
+  border-radius: 20px;
+}
+.wos-task-sheet > div:first-child { background: var(--surface); }
+.wos-quick-add input[aria-label="Task name"] { background: var(--surface); }
+.wos-calendar-strip button { border-radius: 13px; }
+.wos-calendar-strip button:hover { background: var(--surface2); }
+@media (max-width: 390px) {
+  .wos-week-grid { gap: 4px; }
+  .wos-week-day { min-height: 85px; border-radius: 13px; }
+  .wos-week-count, .wos-week-none { min-width: 22px; height: 22px; }
+}
