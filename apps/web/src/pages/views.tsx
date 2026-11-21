@@ -51,7 +51,7 @@ export function InboxPage() {
           </Button>
         </EmptyState>
       ) : (
-        <TaskList tasks={sorted} nested sortable={sort === 'manual' ? { projectId: null, sectionId: null } : undefined} />
+        <div className="wos-panel p-3"><TaskList tasks={sorted} nested sortable={sort === 'manual' ? { projectId: null, sectionId: null } : undefined} /></div>
       )}
       <AddInline onClick={() => actions.openQuickAdd({ projectId: null })} />
     </>
@@ -60,7 +60,7 @@ export function InboxPage() {
 
 export function AddInline({ onClick, label = 'Add task' }: { onClick: () => void; label?: string }) {
   return (
-    <button type="button" onClick={onClick} className="mt-1 flex min-h-11 w-full items-center gap-3 px-3 text-sm text-muted hover:text-accent-text">
+    <button type="button" onClick={onClick} className="wos-inline-add mt-2 flex min-h-11 w-full items-center gap-3 rounded-2xl px-4 text-sm font-semibold text-muted hover:text-accent-text">
       <span className="flex h-5 w-5 items-center justify-center rounded-full text-accent-text">
         <Plus size={18} />
       </span>
@@ -161,7 +161,7 @@ export function TodayPage() {
         }
       />
       {showEvents && events.length > 0 && (
-        <div className="mb-3">
+        <div className="mb-4 wos-panel p-3">
           <EventBlock events={events} />
           {(anyStale || offlineCache) && <p className="mt-1 text-xs text-warn">{offlineCache ? 'Showing saved calendar data (offline).' : 'Some calendars have not synced recently.'}</p>}
         </div>
@@ -169,15 +169,15 @@ export function TodayPage() {
       {showTasks && (
         <>
           {focus.length > 0 && (
-            <section aria-label="Focus" className="mb-3">
-              <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
-                <Star size={14} className="text-warn" fill="currentColor" aria-hidden /> Focus
+            <section aria-label="Focus" className="mb-4">
+              <h2 className="wos-section-label wos-section-lime mb-3 flex items-center gap-2">
+                <Star size={14} aria-hidden /> Focus
               </h2>
-              <TaskList tasks={focus} showProject />
+              <div className="wos-panel p-3"><TaskList tasks={focus} showProject /></div>
             </section>
           )}
           {view.overdue.length > 0 && (
-            <section aria-label="Overdue" className="mb-3">
+            <section aria-label="Overdue" className="mb-4 wos-panel p-3">
               <div className="flex items-center justify-between">
                 <button className="flex min-h-10 items-center gap-1 text-sm font-semibold" aria-expanded={showOverdue} onClick={() => setShowOverdue(!showOverdue)}>
                   <ChevronDown size={16} className={clsx('transition-transform', !showOverdue && '-rotate-90')} aria-hidden /> Overdue <span className="font-normal text-muted">{view.overdue.length}</span>
@@ -188,14 +188,14 @@ export function TodayPage() {
             </section>
           )}
           {dueToday.length > 0 && (
-            <section aria-label="Tasks due today">
+            <section aria-label="Tasks due today" className="mb-4 wos-panel p-3">
               {(view.overdue.length > 0 || focus.length > 0) && <h2 className="mb-1 text-sm font-semibold">Today</h2>}
               <TaskList tasks={dueToday} showProject showDate={false} sortable={sortMode === 'manual' ? undefined : undefined} />
             </section>
           )}
           <AddInline onClick={() => actions.openQuickAdd({ date: today })} />
           {prefs['display.todayShowCompleted'] === true && completedCount > 0 && (
-            <section aria-label="Completed today" className="mt-4">
+            <section aria-label="Completed today" className="mt-4 wos-panel p-3">
               <h2 className="mb-1 text-sm font-semibold text-muted">Completed today ({completedCount})</h2>
               <TaskList tasks={view.completedToday} showProject showDate={false} />
             </section>
@@ -315,7 +315,7 @@ export function UpcomingPage() {
       </div>
 
       {layout !== 'month' && (
-        <div className="mb-3 grid grid-cols-7 border-b border-line pb-2 text-center" role="group" aria-label="Week">
+        <div className="wos-calendar-strip mb-4 grid grid-cols-7 gap-1 rounded-2xl border border-line bg-surface p-2 text-center" role="group" aria-label="Week">
           {strip.map((d) => {
             const has = byDay.get(d);
             const sel = d === start;
@@ -364,7 +364,7 @@ export function UpcomingPage() {
               const virtual = (b?.tasks ?? []).filter((x) => x.virtual).map((x) => x.task);
               const empty = !tasks.length && !virtual.length && !(b?.events.length ?? 0);
               return (
-                <section key={d} aria-label={dayHeading(d, today)} className="mb-3 border-b border-line/60 pb-2">
+                <section key={d} aria-label={dayHeading(d, today)} className="wos-panel mb-4 p-3">
                   <div className="flex items-center justify-between">
                     <h2 className={clsx('py-2 text-sm font-bold', empty && 'font-semibold text-muted')}>{dayHeading(d, today)}</h2>
                     <IconButton label={`Add task on ${d}`} onClick={() => actions.openQuickAdd({ date: d })}>
