@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Workspace OS app icon">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffdf8"/><stop offset="1" stop-color="#fff0e6"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffce75"/><stop offset=".46" stop-color="#ff9133"/><stop offset="1" stop-color="#f35b50"/></linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffc35d"/><stop offset="1" stop-color="#ff761c"/></linearGradient>
+    <linearGradient id="check" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#984413"/><stop offset="1" stop-color="#55260f"/></linearGradient>
+  </defs>
+  <rect x="4" y="4" width="504" height="504" rx="108" fill="url(#tile)"/>
+  <path d="M278 148H194c-48 0-68 25-68 73v120c0 55 24 76 72 76h136c53 0 72-25 72-76V218" fill="none" stroke="url(#rim)" stroke-width="45" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M309 192C312 127 360 85 422 86c13 59-30 103-113 106Z" fill="url(#leaf)"/>
+  <path d="M205 283l48 44 87-87" fill="none" stroke="url(#check)" stroke-width="43" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
