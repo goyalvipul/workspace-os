@@ -88,8 +88,8 @@ function TaskDetail({ id }: { id: string }) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 border-b border-line px-3 py-2">
+    <div className="wos-task-sheet flex h-full min-h-0 flex-1 flex-col">
+      <div className="flex min-h-[62px] items-center gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1 truncate text-sm text-muted">
           {parent ? (
             <button className="hover:text-fg" onClick={() => actions.openTask(parent.id)}>
@@ -144,7 +144,7 @@ function TaskDetail({ id }: { id: string }) {
         </IconButton>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-auto p-4 scroll-thin">
+      <div className="min-h-0 flex-1 space-y-5 overflow-auto p-4 scroll-thin sm:p-5">
         <div className="flex items-start gap-1">
           <TaskCheckbox task={task} onToggle={() => toggle(task)} />
           <Textarea
@@ -180,8 +180,8 @@ function TaskDetail({ id }: { id: string }) {
           />
         </div>
 
-        <section aria-label="Planning" className="grid gap-2 sm:grid-cols-2">
-          <div className="flex items-center gap-2 rounded-lg bg-surface p-2.5">
+        <section aria-label="Planning" className="grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3">
             <CalendarClock size={16} className="text-muted" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted">Planned (scheduled) date</p>
@@ -236,9 +236,9 @@ function TaskDetail({ id }: { id: string }) {
           {editDesc ? (
             <Textarea aria-label="Description" rows={6} value={desc} maxLength={20000} onChange={(e) => setDesc(e.target.value)} placeholder="Markdown: **bold**, - lists, [links](https://...)" />
           ) : html ? (
-            <div className="prose-md rounded-lg bg-surface p-3 text-sm" dangerouslySetInnerHTML={{ __html: html }} />
+            <div className="prose-md rounded-2xl border border-line bg-surface p-4 text-sm" dangerouslySetInnerHTML={{ __html: html }} />
           ) : (
-            <button className="w-full rounded-lg bg-surface p-3 text-left text-sm text-muted" onClick={() => setEditDesc(true)}>
+            <button className="w-full rounded-2xl border border-line bg-surface p-4 text-left text-sm text-muted" onClick={() => setEditDesc(true)}>
               Add a description...
             </button>
           )}
