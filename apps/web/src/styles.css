@@ -359,3 +359,15 @@ select {
   .wos-week-day { min-height: 85px; border-radius: 13px; }
   .wos-week-count, .wos-week-none { min-width: 22px; height: 22px; }
 }
+
+/* Task details: show every line of the editable title before the task metadata chips.
+   The editor measures its content in TaskSheet.tsx; no one-line clipping on phones. */
+.wos-task-title-row { width: 100%; }
+.wos-task-title {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  overflow: hidden;
+}
