@@ -314,10 +314,12 @@ function MobileNav() {
 function MobileCaptureDock() {
   const navigate = useNavigate();
   return (
-    <div className="wos-capture-dock md:hidden" role="group" aria-label="Quick actions">
-      <button type="button" onClick={() => actions.openQuickAdd()} aria-label="Add task" className="wos-capture-plus"><Plus size={24} aria-hidden /></button>
-      <button type="button" onClick={() => actions.openQuickAdd()} className="min-w-0 flex-1 truncate py-3 text-left text-sm font-semibold text-muted">Capture a task or reminder...</button>
-      <button type="button" onClick={() => navigate('/search')} aria-label="Search tasks" className="wos-capture-search"><Search size={21} aria-hidden /></button>
+    <div className="wos-capture-footer md:hidden">
+      <div className="wos-capture-dock" role="group" aria-label="Quick actions">
+        <button type="button" onClick={() => actions.openQuickAdd()} aria-label="Add task" className="wos-capture-plus"><Plus size={24} aria-hidden /></button>
+        <button type="button" onClick={() => actions.openQuickAdd()} className="min-w-0 flex-1 truncate py-3 text-left text-sm font-semibold text-muted">Capture a task or reminder...</button>
+        <button type="button" onClick={() => navigate('/search')} aria-label="Search tasks" className="wos-capture-search"><Search size={21} aria-hidden /></button>
+      </div>
     </div>
   );
 }
@@ -331,7 +333,7 @@ export function Shell() {
       {!isDesktop && <MobileNav />}
       <main id="main" className="wos-main min-h-0 min-w-0 flex-1 overflow-y-auto scroll-thin" tabIndex={-1}>
         <Banners />
-        <div className="wos-content mx-auto max-w-4xl px-4 pb-36 md:px-8 md:pb-12">
+        <div className="wos-content mx-auto max-w-4xl px-4 pb-8 md:px-8 md:pb-12">
           <Outlet />
         </div>
       </main>
