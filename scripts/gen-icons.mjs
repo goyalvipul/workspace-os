@@ -132,6 +132,15 @@ for(const [filename,size,maskable] of [
   ['icon-192.png',192,false], ['icon-512.png',512,false],
   ['icon-maskable-512.png',512,true], ['apple-touch-icon.png',180,true],
   ['favicon-32.png',32,false], ['favicon-16.png',16,false],
-]) writeFileSync(resolve(out,filename),render(size,{maskable}));
-writeFileSync(resolve(out,'icon.svg'),svg);
+]) {
+  const image = render(size, { maskable });
+  writeFileSync(resolve(out, filename), image);
+  // Versioned filenames force browser/PWA refreshes without breaking old bookmarks.
+  const branded = filename.replace(/^icon-/, 'workspace-')
+    .replace(/^apple-touch-icon/, 'workspace-apple-touch')
+    .replace(/^favicon-/, 'workspace-favicon-');
+  writeFileSync(resolve(out, branded), image);
+}
+writeFileSync(resolve(out, 'icon.svg'), svg);
+writeFileSync(resolve(out, 'workspace.svg'), svg);
 console.log('Generated Workspace OS branding:', out);
