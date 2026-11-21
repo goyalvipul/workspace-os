@@ -18,6 +18,6 @@ export default defineConfig({
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
-    { name: 'mobile', use: { ...devices['Pixel 7'] }, testMatch: /02-.*\.spec\.ts/, dependencies: ['desktop'] },
+    { name: 'mobile', use: { ...devices['Pixel 7'] }, testMatch: /(?:02|03)-.*\.spec\.ts/, dependencies: ['desktop'] },
   ],
 });
