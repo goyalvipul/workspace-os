@@ -15,6 +15,9 @@ RUN pnpm install --frozen-lockfile
 
 COPY packages packages
 COPY apps apps
+# @wos/web's build script generates branding icons from this source.
+# Copy it into the build stage; .dockerignore does not exclude it.
+COPY scripts/gen-icons.mjs scripts/gen-icons.mjs
 ARG GIT_SHA=dev
 ENV GIT_SHA=${GIT_SHA}
 RUN pnpm --filter @wos/web build && pnpm --filter @wos/server build
