@@ -99,3 +99,36 @@ test('mobile capture bar stays docked beneath the scroll area and not over task 
   await dock.getByRole('button', { name: 'Add task' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });
+
+test('mobile task details show the full title and keep metadata below the editor', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'mobile-only title layout regression');
+  const title = 'Fix mobile UI and verify reminders show correctly in the task detail view after editing a long multi-line title on an iPhone';
+  await quickAdd(page, title);
+  await page.goto('/tasks');
+  await page.getByLabel('Filter tasks by name').fill('Fix mobile UI and verify reminders');
+  await page.getByRole('button', { name: `Open ${title}` }).click();
+
+  const editor = page.getByRole('textbox', { name: 'Task title' });
+  await expect(editor).toHaveValue(title);
+  const measurements = await editor.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const chips = element.closest('.wos-task-title-row')?.nextElementSibling?.getBoundingClientRect();
+    return {
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+      bottom: box.bottom,
+      chipsTop: chips?.top ?? 0,
+    };
+  });
+  expect(measurements.scrollHeight).toBeLessThanOrEqual(measurements.clientHeight + 3);
+  expect(measurements.chipsTop).toBeGreaterThanOrEqual(measurements.bottom - 2);
+
+  // Editing should keep growing the title and must not hide the other sections.
+  await editor.fill(`${title} and make sure all text remains accessible`);
+  const resized = await editor.evaluate((el) => ({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }));
+  expect(resized.scrollHeight).toBeLessThanOrEqual(resized.clientHeight + 3);
+  await editor.blur();
+  const subtasks = page.getByRole('region', { name: 'Subtasks' });
+  await subtasks.scrollIntoViewIfNeeded();
+  await expect(subtasks).toBeInViewport();
+});
