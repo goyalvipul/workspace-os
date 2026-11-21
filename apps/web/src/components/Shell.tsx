@@ -146,7 +146,7 @@ function Sidebar() {
   return (
     <aside className="wos-sidebar flex w-[268px] shrink-0 flex-col border-r border-line p-3" aria-label="Sidebar">
       <div className="mb-6 flex items-center gap-3 px-2 pt-4">
-        <img src="/icons/icon.svg" alt="" className="h-10 w-10 rounded-2xl bg-surface p-1 shadow-sm" />
+        <img src="/icons/workspace.svg" alt="" className="h-10 w-10 rounded-2xl bg-surface p-1 shadow-sm" />
         <span className="text-base font-extrabold tracking-tight">Workspace OS</span>
       </div>
       <button type="button" onClick={() => actions.openQuickAdd()} className="wos-sidebar-add mb-5 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-bold hover:brightness-95">
