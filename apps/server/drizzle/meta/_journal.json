@@ -15,7 +15,8 @@
       "when": 1791964959728,
       "tag": "0001_fts",
       "breakpoints": true
-    },    {
+    },
+    {
       "idx": 2,
       "version": "6",
       "when": 1792000000000,
@@ -34,6 +35,13 @@
       "version": "6",
       "when": 1792200000000,
       "tag": "0004_creatoros",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792800000000,
+      "tag": "0005_task_status_update",
       "breakpoints": true
     }
   ]
