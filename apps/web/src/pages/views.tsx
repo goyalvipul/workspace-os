@@ -118,7 +118,7 @@ export function TodayPage() {
   }, [view.dueToday, sortMode, prefs, projects, focusIds]);
 
   const boardOpen = [...new Map([...focus, ...view.overdue, ...dueToday].map((t) => [t.id, t])).values()];
-  const nothing = !view.overdue.length && !dueToday.length && !focus.length && !(showEvents && events.length) && !(todayLayout === 'board' && view.completedToday.length);
+  const nothing = todayLayout === 'list' && !view.overdue.length && !dueToday.length && !focus.length && !(showEvents && events.length);
   const completedCount = view.completedToday.length;
   return (
     <>
