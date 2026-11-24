@@ -287,6 +287,7 @@ export function createTask(s: Scope, input: TaskCreateInput): { task: TaskDTO; c
       parentTaskId,
       title: input.title.trim(),
       description: input.description ?? '',
+      statusUpdate: input.statusUpdate ?? '',
       priority: input.priority ?? 4,
       status: 'open',
       position: nextPosition(s, projectId, sectionId, parentTaskId),
@@ -313,6 +314,7 @@ export function patchTask(s: Scope, id: string, input: TaskPatchInput): TaskDTO 
   const patch: Partial<typeof T.$inferInsert> = {};
   if (input.title !== undefined && input.title.trim() !== row.title) { patch.title = input.title.trim(); changed.push('title'); }
   if (input.description !== undefined && input.description !== row.description) { patch.description = input.description; changed.push('description'); }
+  if (input.statusUpdate !== undefined && input.statusUpdate !== row.statusUpdate) { patch.statusUpdate = input.statusUpdate; changed.push('statusUpdate'); }
   if (input.priority !== undefined && input.priority !== row.priority) { patch.priority = input.priority; changed.push('priority'); }
 
   // project / section / parent moves

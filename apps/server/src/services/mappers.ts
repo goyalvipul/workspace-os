@@ -120,6 +120,7 @@ export function taskRowToDTO(t: TaskRow, labelIds: string[], reminders: Reminder
     parentTaskId: t.parentTaskId,
     title: t.title,
     description: t.description,
+    statusUpdate: t.statusUpdate,
     priority: t.priority,
     status: (t.status as TaskDTO['status']) ?? 'open',
     position: t.position,

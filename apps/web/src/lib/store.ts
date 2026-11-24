@@ -540,6 +540,7 @@ async function sendPendingPrefs(): Promise<void> {
 export interface TaskPatch {
   title: string;
   description: string;
+  statusUpdate: string;
   projectId: string | null;
   sectionId: string | null;
   parentTaskId: string | null;
@@ -634,6 +635,7 @@ export const actions = {
       parentTaskId,
       title: input.title.trim(),
       description: input.description ?? '',
+      statusUpdate: input.statusUpdate ?? '',
       priority: input.priority ?? ((s.prefs['tasks.defaultPriority'] as number) || 4),
       status: 'open',
       position: nextPosition(projectId, sectionId, parentTaskId),
@@ -660,6 +662,7 @@ export const actions = {
       id,
       title: task.title,
       description: task.description || undefined,
+      statusUpdate: task.statusUpdate || undefined,
       projectId,
       sectionId,
       parentTaskId,

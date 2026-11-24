@@ -12,6 +12,7 @@ import { useAllTasks, useInboxTasks, useTodayView } from '../lib/selectors';
 import { actions, useStore } from '../lib/store';
 import { formatLongDate } from '@wos/shared';
 import { MonthGrid } from './calendar';
+import { TodayBoard } from './TodayBoard';
 import { useNavigate } from 'react-router-dom';
 
 export function InboxPage() {
@@ -100,6 +101,7 @@ export function TodayPage() {
   const showEvents = prefs['display.todayShowEvents'] !== false;
   const showTasks = prefs['display.todayShowTasks'] !== false;
   const sortMode = prefs['display.todaySort'] as string;
+  const todayLayout = prefs['display.todayLayout'] === 'board' ? 'board' : 'list';
   const focusIds = (prefs['focus.taskIds'] as string[]).filter((id) => all[id] && all[id]?.status === 'open');
   const focus = focusIds.map((id) => all[id] as TaskDTO);
 
@@ -115,7 +117,8 @@ export function TodayPage() {
     return [...list].sort(compareTasks('time'));
   }, [view.dueToday, sortMode, prefs, projects, focusIds]);
 
-  const nothing = !view.overdue.length && !dueToday.length && !focus.length && !(showEvents && events.length);
+  const boardOpen = [...new Map([...focus, ...view.overdue, ...dueToday].map((t) => [t.id, t])).values()];
+  const nothing = todayLayout === 'list' && !view.overdue.length && !dueToday.length && !focus.length && !(showEvents && events.length);
   const completedCount = view.completedToday.length;
   return (
     <>
@@ -160,13 +163,19 @@ export function TodayPage() {
           </PopoverRoot>
         }
       />
+      <div className="mb-4 flex items-center justify-between gap-3" role="group" aria-label="Today view layout">
+        <span className="text-sm font-semibold text-muted">View</span>
+        <Segmented label="Today layout" value={todayLayout} onChange={(v) => void actions.setPref('display.todayLayout', v)} options={[{ value: 'list', label: 'List' }, { value: 'board', label: 'Columns' }]} />
+      </div>
       {showEvents && events.length > 0 && (
         <div className="mb-4 wos-panel p-3">
           <EventBlock events={events} />
           {(anyStale || offlineCache) && <p className="mt-1 text-xs text-warn">{offlineCache ? 'Showing saved calendar data (offline).' : 'Some calendars have not synced recently.'}</p>}
         </div>
       )}
-      {showTasks && (
+      {showTasks && (todayLayout === 'board' ? (
+        <TodayBoard open={boardOpen} done={view.completedToday} date={today} />
+      ) : (
         <>
           {focus.length > 0 && (
             <section aria-label="Focus" className="mb-4">
@@ -201,7 +210,7 @@ export function TodayPage() {
             </section>
           )}
         </>
-      )}
+      ))}
       {nothing && (
         <EmptyState title="Enjoy the rest of your day." body={completedCount ? `Today you completed ${completedCount} task${completedCount > 1 ? 's' : ''}. Nothing else is due.` : 'Nothing is due today.'}>
           <Button variant="primary" onClick={() => actions.openQuickAdd({ date: today })}>

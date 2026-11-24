@@ -112,6 +112,7 @@ export const tasks = sqliteTable(
     parentTaskId: text('parent_task_id').references((): any => tasks.id, { onDelete: 'set null' }),
     title: text('title').notNull(),
     description: text('description').notNull().default(''),
+    statusUpdate: text('status_update').notNull().default(''),
     priority: integer('priority').notNull().default(4),
     status: text('status').notNull().default('open'),
     position: text('position').notNull().default('0000001000'),
