@@ -2,7 +2,7 @@ import { closestCorners, DndContext, DragOverlay, KeyboardSensor, PointerSensor,
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ArrowLeft, ArrowRight, CheckCircle2, Clock3, GripVertical, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatDateLabel, type TaskDTO } from '@wos/shared';
 import { TaskCheckbox, useToggleTask } from '../components/TaskRow';
 import { useToday } from '../lib/hooks';
@@ -15,11 +15,17 @@ const laneId = (lane: Lane) => `today:${lane}`;
 function StatusUpdate({ task }: { task: TaskDTO }) {
   const [draft, setDraft] = useState(task.statusUpdate ?? '');
   const [editing, setEditing] = useState(false);
+  const cancelRef = useRef(false);
   useEffect(() => {
     if (!editing) setDraft(task.statusUpdate ?? '');
   }, [task.statusUpdate, editing, task.id]);
   const save = () => {
     setEditing(false);
+    if (cancelRef.current) {
+      cancelRef.current = false;
+      setDraft(task.statusUpdate ?? '');
+      return;
+    }
     const update = draft.trim();
     if (update !== (task.statusUpdate ?? '')) actions.updateTask(task.id, { statusUpdate: update });
   };
@@ -32,7 +38,7 @@ function StatusUpdate({ task }: { task: TaskDTO }) {
         maxLength={280}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        onFocus={() => setEditing(true)}
+        onFocus={() => { cancelRef.current = false; setEditing(true); }}
         onBlur={save}
         onKeyDown={(e) => {
           // Enter commits, Shift+Enter adds a new line.
@@ -41,7 +47,7 @@ function StatusUpdate({ task }: { task: TaskDTO }) {
             e.currentTarget.blur();
           }
           if (e.key === 'Escape') {
-            setDraft(task.statusUpdate ?? '');
+            cancelRef.current = true;
             e.currentTarget.blur();
           }
         }}
