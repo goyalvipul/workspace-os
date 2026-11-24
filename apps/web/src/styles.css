@@ -385,3 +385,32 @@ select {
   white-space: pre-wrap;
   overflow: hidden;
 }
+
+
+/* Today columns: two honest task states, not a duplicate project workflow. */
+.wos-today-board-grid { align-items: start; }
+.wos-today-lane { min-height: 270px; transition: border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+.wos-today-card {
+  position: relative;
+  animation: wos-today-card-enter .18s cubic-bezier(.2, 0, 0, 1);
+  transition: box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+.wos-today-card:hover { border-color: var(--accent-text); box-shadow: 0 5px 15px rgb(0 0 0 / .07); }
+.wos-today-grip { cursor: grab; }
+.wos-today-grip:active { cursor: grabbing; }
+.wos-today-update { min-height: 64px; line-height: 1.4; }
+.wos-today-move { background: var(--surface2); color: var(--fg); }
+.wos-today-move:hover { background: var(--accent); color: var(--accent-fg); }
+@keyframes wos-today-card-enter {
+  from { opacity: .55; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 430px) {
+  .wos-today-board-grid { gap: 8px; }
+  .wos-today-lane { padding: 8px; border-radius: 20px; }
+  .wos-today-card { padding: 8px; }
+  .wos-today-card button:not(.wos-today-grip) { overflow-wrap: anywhere; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wos-today-card, .wos-today-lane { animation: none; transition: none; }
+}
