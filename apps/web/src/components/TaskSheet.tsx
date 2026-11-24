@@ -48,6 +48,8 @@ function TaskDetail({ id }: { id: string }) {
   const [title, setTitle] = useState(task.title);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const [desc, setDesc] = useState(task.description);
+  const [statusNote, setStatusNote] = useState(task.statusUpdate ?? '');
+  const [editingStatusNote, setEditingStatusNote] = useState(false);
   const [editDesc, setEditDesc] = useState(false);
   const [subTitle, setSubTitle] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -70,6 +72,9 @@ function TaskDetail({ id }: { id: string }) {
   useEffect(() => {
     if (!editDesc) setDesc(task.description);
   }, [task.description, editDesc]);
+  useEffect(() => {
+    if (!editingStatusNote) setStatusNote(task.statusUpdate ?? '');
+  }, [task.statusUpdate, editingStatusNote]);
 
   const subtasks = useMemo(() => sortByPosition(Object.values(all).filter((t) => t.parentTaskId === id)), [all, id]);
   const parent = task.parentTaskId ? all[task.parentTaskId] : null;
@@ -128,7 +133,7 @@ function TaskDetail({ id }: { id: string }) {
             <MenuItem
               icon={<Copy size={16} />}
               onSelect={() => {
-                actions.createTask({ title: `${task.title} (copy)`, description: task.description, priority: task.priority, projectId: task.projectId, sectionId: task.sectionId, labelIds: task.labelIds, dueDate: task.dueDate, dueAtUtc: task.dueAtUtc, dueTimezone: task.dueTimezone, recurrence: task.recurrence ? { rule: task.recurrence.rule, mode: task.recurrence.mode } : null });
+                actions.createTask({ title: `${task.title} (copy)`, description: task.description, statusUpdate: task.statusUpdate, priority: task.priority, projectId: task.projectId, sectionId: task.sectionId, labelIds: task.labelIds, dueDate: task.dueDate, dueAtUtc: task.dueAtUtc, dueTimezone: task.dueTimezone, recurrence: task.recurrence ? { rule: task.recurrence.rule, mode: task.recurrence.mode } : null });
                 toast('Task duplicated', 'success');
               }}
             >
@@ -233,6 +238,25 @@ function TaskDetail({ id }: { id: string }) {
               }
             />
           </div>
+        </section>
+
+        <section aria-label="Status update">
+          <label htmlFor="task-status-note" className="mb-2 block text-sm font-semibold">Status update</label>
+          <Textarea
+            id="task-status-note"
+            aria-label="Status update"
+            rows={2}
+            maxLength={280}
+            value={statusNote}
+            placeholder="A brief update shown on the Today board..."
+            onFocus={() => setEditingStatusNote(true)}
+            onChange={(e) => setStatusNote(e.target.value)}
+            onBlur={() => {
+              setEditingStatusNote(false);
+              const note = statusNote.trim();
+              if (note !== (task.statusUpdate ?? '')) actions.updateTask(task.id, { statusUpdate: note });
+            }}
+          />
         </section>
 
         <section aria-label="Description">
