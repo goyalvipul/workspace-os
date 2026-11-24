@@ -138,8 +138,20 @@ function TodayLane({ lane, tasks, onToggle, onAdd }: { lane: Lane; tasks: TaskDT
 /** Two status lanes based on the existing open/completed workflow, not project sections. */
 export function TodayBoard({ open, done, date }: { open: TaskDTO[]; done: TaskDTO[]; date: string }) {
   const { toggle, dialog } = useToggleTask();
+  const focusIds = useStore((s) => s.prefs['focus.taskIds'] as string[] | undefined);
   const [activeId, setActiveId] = useState<string | null>(null);
   const tasks = [...open, ...done];
+  const move = (task: TaskDTO) => {
+    if (task.status === 'completed') {
+      // Moving a completed (possibly unscheduled) card to Today's To Do
+      // must not make it vanish from the board after reopening.
+      toggle(task);
+      const visibleToday = [task.scheduledDate, task.dueDate].some((d) => d && d <= date) || !!focusIds?.includes(task.id);
+      if (!visibleToday) actions.updateTask(task.id, { scheduledDate: date, scheduledAtUtc: null });
+      return;
+    }
+    toggle(task);
+  };
   const activeTask = tasks.find((t) => t.id === activeId) ?? null;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 7 } }),
@@ -156,8 +168,8 @@ export function TodayBoard({ open, done, date }: { open: TaskDTO[]; done: TaskDT
       targetId === laneId('todo') ? 'todo' :
       done.some((t) => t.id === targetId) ? 'done' :
       open.some((t) => t.id === targetId) ? 'todo' : null;
-    if (target === 'done' && item.status === 'open') toggle(item);
-    if (target === 'todo' && item.status === 'completed') toggle(item);
+    if (target === 'done' && item.status === 'open') move(item);
+    if (target === 'todo' && item.status === 'completed') move(item);
   };
   return (
     <div className="wos-today-board">
@@ -170,8 +182,8 @@ export function TodayBoard({ open, done, date }: { open: TaskDTO[]; done: TaskDT
         onDragCancel={() => setActiveId(null)}
       >
         <div className="wos-today-board-grid grid grid-cols-2 items-start gap-2 sm:gap-4">
-          <TodayLane lane="todo" tasks={open} onToggle={toggle} onAdd={() => actions.openQuickAdd({ date })} />
-          <TodayLane lane="done" tasks={done} onToggle={toggle} onAdd={() => undefined} />
+          <TodayLane lane="todo" tasks={open} onToggle={move} onAdd={() => actions.openQuickAdd({ date })} />
+          <TodayLane lane="done" tasks={done} onToggle={move} onAdd={() => undefined} />
         </div>
         <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}>
           {activeTask && <div className="wos-today-card w-[min(270px,70vw)] rounded-2xl border-2 border-accent-text bg-surface p-3 shadow-2xl"><CardContents task={activeTask} onToggle={() => undefined} preview /></div>}
