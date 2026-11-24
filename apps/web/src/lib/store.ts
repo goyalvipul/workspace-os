@@ -540,6 +540,7 @@ async function sendPendingPrefs(): Promise<void> {
 export interface TaskPatch {
   title: string;
   description: string;
+  statusUpdate: string;
   projectId: string | null;
   sectionId: string | null;
   parentTaskId: string | null;
