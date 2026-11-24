@@ -13,6 +13,8 @@ import {
   parseQuickAdd,
   preferenceDefaults,
   preferenceSchemas,
+  taskCreateInput,
+  taskPatchInput,
   selectToday,
   templateBodySchema,
   todayLocal,
@@ -147,5 +149,25 @@ describe('dashboard and task-grouping preferences', () => {
     expect(preferenceSchemas['display.allTasksGrouping'].parse('project')).toBe('project');
     expect(preferenceSchemas['display.allTasksSort'].parse('priority')).toBe('priority');
     expect(preferenceSchemas['display.allTasksGrouping'].safeParse('unknown').success).toBe(false);
+  });
+});
+
+describe('Today columns state and status-update validation', () => {
+  it('defaults Today to the original List layout and accepts Columns', () => {
+    expect(preferenceDefaults['display.todayLayout']).toBe('list');
+    expect(preferenceSchemas['display.todayLayout'].parse('board')).toBe('board');
+    expect(preferenceSchemas['display.todayLayout'].safeParse('in-progress').success).toBe(false);
+  });
+  it('keeps the status update independent of the description and caps it at 280 chars', () => {
+    expect(taskCreateInput.parse({ title: 'Work', description: 'Long details', statusUpdate: 'Waiting on review' }).statusUpdate).toBe('Waiting on review');
+    expect(taskPatchInput.parse({ version: 1, statusUpdate: 'Done with review' }).statusUpdate).toBe('Done with review');
+    expect(taskPatchInput.safeParse({ version: 1, statusUpdate: 'x'.repeat(281) }).success).toBe(false);
+  });
+  it('reports the correct To Do and Done tasks for today', () => {
+    const open = task({ status: 'open', dueDate: '2026-10-14' });
+    const done = task({ id: '01HYYYYYYYYYYYYYYYYYYYYYYY', status: 'completed', dueDate: '2026-10-14', completedAt: '2026-10-14T17:30:00.000Z' });
+    const result = selectToday([open, done], '2026-10-14', TZ, localDateOf);
+    expect(result.dueToday.map((t) => t.id)).toContain(open.id);
+    expect(result.completedToday.map((t) => t.id)).toContain(done.id);
   });
 });
