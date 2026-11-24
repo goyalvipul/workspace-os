@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Columns3, ListIcon, MoreHorizontal, Plus, Star, Settings2 } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Plus, Star, Settings2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { addDays, formatDateLabel, isOverdue, monthName, parseDate, selectUpcoming, startOfWeek, rangeDays, weekdayOf, compareTasks, type CalendarEventDTO, type TaskDTO } from '@wos/shared';
 import { EventBlock } from '../components/EventRow';
@@ -165,7 +165,7 @@ export function TodayPage() {
       />
       <div className="mb-4 flex items-center justify-between gap-3" role="group" aria-label="Today view layout">
         <span className="text-sm font-semibold text-muted">View</span>
-        <Segmented label="Today layout" value={todayLayout} onChange={(v) => void actions.setPref('display.todayLayout', v)} options={[{ value: 'list', label: 'List', icon: <ListIcon size={16} aria-hidden /> }, { value: 'board', label: 'Columns', icon: <Columns3 size={16} aria-hidden /> }]} />
+        <Segmented label="Today layout" value={todayLayout} onChange={(v) => void actions.setPref('display.todayLayout', v)} options={[{ value: 'list', label: 'List' }, { value: 'board', label: 'Columns' }]} />
       </div>
       {showEvents && events.length > 0 && (
         <div className="mb-4 wos-panel p-3">
