@@ -67,6 +67,7 @@ export const projects = sqliteTable(
     parentProjectId: text('parent_project_id').references((): any => projects.id, { onDelete: 'set null' }),
     name: text('name').notNull(),
     description: text('description').notNull().default(''),
+    statusUpdate: text('status_update').notNull().default(''),
     outcome: text('outcome').notNull().default(''),
     color: text('color').notNull().default('#8b8d98'),
     icon: text('icon'),
